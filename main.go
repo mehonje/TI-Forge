@@ -1,7 +1,7 @@
 package main
 
-import("fmt")
+import("github.com/mehonje/TI-Convert")
 
 func main() {
-	fmt.Println("Hello World!")
+	Convert.eightxp_to_txt()
 }
