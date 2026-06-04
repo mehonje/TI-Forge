@@ -1,5 +1,12 @@
 package convert
 
+import (
+	"encoding/hex"
+	"log"
+	"os"
+	"strings"
+)
+
 var tokens = map[byte]string{ // Normal tokens
 	0x3f: "\n",          // Newline
 	0x82: "*",           // Multiplication
@@ -262,6 +269,122 @@ var tokens_7e = map[byte]string{
 }
 
 var reverse_tokens = map[string][]byte{}
+
+func Read8xp(path string) []byte {
+	path = strings.TrimSpace(path)   // Remove whitespace
+	if !strings.HasSuffix(path, ".8xp") { // If file path doesn't have ".8xp" suffix,
+		path = path + ".8xp" // Append it
+	}
+
+
+	var program_metadata [4]string
+	var program_data []byte
+	byte_data, err := os.ReadFile(path) // Read file data
+	if err != nil {
+		log.Fatal("Failed to read file data: ", err)
+	}
+
+	if len(byte_data) > 76 { // If data is more than 76 bytes long,
+		program_metadata[0] = string(byte_data[60:67])                  // Store bytes 60 - 67 (program name)
+		program_metadata[1] = string(byte_data[11:52])                  // Store bytes 11 - 52 (transmission comment)
+		program_metadata[2] = hex.EncodeToString([]byte{byte_data[59]}) // Store byte 59 (type id)
+		program_metadata[3] = hex.EncodeToString([]byte{byte_data[69]}) // Store bytes 69 (flag)
+		program_data = byte_data[74 : len(byte_data)-2]                 // Store bytes 74 - end-2 (program), remove the first 74 bytes (program metadata) and last 2 bytes (checksum)
+	}
+
+	return program_data
+}
+
+func Data_to_strings(program_data []byte) []string {
+	var result []string = []string{""}
+	var builder strings.Builder
+	var i int = 0
+	var program_data_len int = len(program_data)
+	for i < program_data_len {
+		curr_byte := program_data[i]
+		var next_byte byte
+
+		step := 1
+		if i < program_data_len-1 {
+			next_byte = program_data[i+1]
+			
+			switch curr_byte {
+			case 0xbb:
+				s, ok := tokens_bb[next_byte] // Check if mapping exists
+				if ok {
+					builder.WriteString(s) //Replace if yes, 
+					step = 2
+				} else {
+					builder.WriteString(string(curr_byte)) // Turn into string if no
+				}
+			case 0xef:
+				s, ok := tokens_ef[next_byte] // Check if mapping exists
+				if ok {
+					builder.WriteString(s) // Replace if yes,
+					step = 2
+				} else {
+					builder.WriteString("Wait ") // Add "wait" command (0xef) if no
+				}
+			case 0x63:
+				s, ok := tokens_63[next_byte] // Check if mapping exists
+				if ok {
+					builder.WriteString(s) // Replace if yes,
+					step = 2
+				} else {
+					builder.WriteString(string(curr_byte)) // Turn into string if no
+				}
+			case 0x5d:
+				s, ok := tokens_5d[next_byte] // Check if mapping exists
+				if ok {
+					builder.WriteString(s) // Replace if yes,
+					step = 2
+				} else {
+					builder.WriteString("/") // Add division operator (0x5d) if no
+				}
+			case 0x7e:
+				s, ok := tokens_7e[next_byte] // Check if mapping exists
+				if ok {
+					builder.WriteString(s) // Replace if yes,
+					step = 2
+				} else {
+					builder.WriteString(string(curr_byte)) // Turn into string if no
+				}
+			default:
+				s, ok := tokens[curr_byte] // Check if normal mapping exists
+				if ok {
+					builder.WriteString(s) // Replace if yes,
+					if s == "\n" { // If maps to newline, start newline
+						result[len(result)-1] = builder.String()
+						result = append(result, "")
+						builder.Reset()
+					}
+				} else {
+					builder.WriteString(string(curr_byte)) // Turn into string if no
+				}
+			}
+		} else {
+			s, ok := tokens[curr_byte] // Check if normal mapping exists
+			if ok {
+				builder.WriteString(s) // Rpleace if yes
+				if s == "\n" { // If maps to newline, start newline
+					result[len(result)-1] = builder.String()
+					result = append(result, "")
+					builder.Reset()
+				}
+			} else {
+				builder.WriteString(string(curr_byte)) // Turn into string if no
+			}
+		}
+		i += step
+	}
+	
+	if builder.Len() > 0 { // If builder still has data,
+		result[len(result)-1] = builder.String() // Add it to result
+	}
+
+
+	return result
+}
 
 func init() {
 	for key, val := range tokens {
