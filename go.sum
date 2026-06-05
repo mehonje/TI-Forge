@@ -1,2 +1,5 @@
-github.com/mehonje/TI-Convert v0.0.0-20260604153004-137f808d9949 h1:PlwywL6KklGKRWXOZmq/ZfbDtA/0hoeiNz4MpqC1VXQ=
 github.com/mehonje/TI-Convert v0.0.0-20260604153004-137f808d9949/go.mod h1:az+YhSyoSFN2JoXXADssQYiJk15ak6TUb5CP9PW6X+I=
+golang.org/x/sys v0.44.0 h1:ildZl3J4uzeKP07r2F++Op7E9B29JRUy+a27EibtBTQ=
+golang.org/x/sys v0.44.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
+golang.org/x/term v0.43.0 h1:S4RLU2sB31O/NCl+zFN9Aru9A/Cq2aqKpTZJ6B+DwT4=
+golang.org/x/term v0.43.0/go.mod h1:lrhlHNdQJHO+1qVYiHfFKVuVioJIheAc3fBSMFYEIsk=
