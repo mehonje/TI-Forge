@@ -85,7 +85,7 @@ func display_data(program_data_commands []string, input_cursor_row int, input_cu
 
 	_, height := get_term_size()
 	half_height := height/2
-	var buffer_row int = cursor_row
+	var buffer_row int = cursor_row-1
 	var buffer_start int = max(0, buffer_row-half_height)
 	var buffer_end int = min(buffer_row+half_height, len(program_data_line_strings))
 
