@@ -104,7 +104,7 @@ func display_data(program_data_commands []string, input_cursor_row int, input_cu
     screen_col += utf8.RuneCountInString(program_data_lines[cursor_row-1][i])
 	}
 
-	fmt.Printf("\033[%d;%dH", screen_row, screen_col) // move cursor
+	fmt.Printf("\033[%d;%dH", screen_row+1, screen_col) // move cursor
 }
 
 func get_input() byte {
