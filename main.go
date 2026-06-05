@@ -29,7 +29,9 @@ func main() {
 	program_data_commands := convert.Data_to_strings(program_data)
 	for {
 		display_data(program_data_commands, cursor_row, cursor_col)
-		process_input(get_input())
+		switch process_input(get_input()) {
+			case 1: return
+		}
 	}
 }
 
@@ -114,7 +116,7 @@ func get_input() byte {
     return buf[0]
 }
 
-func process_input(input byte) {
+func process_input(input byte) int {
 	switch input {
 	case 104: // Left
 		cursor_col--
@@ -124,7 +126,10 @@ func process_input(input byte) {
 		cursor_row++
 	case 107: // Up
 		cursor_row--
+	case 113: // "q"
+		return 1
 	}
+	return 0
 }
 
 func get_term_size() (int, int) {
