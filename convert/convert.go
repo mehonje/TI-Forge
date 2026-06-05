@@ -297,7 +297,6 @@ func Read8xp(path string) []byte {
 
 func Data_to_strings(program_data []byte) []string {
 	var result []string = []string{""}
-	var builder strings.Builder
 	var i int = 0
 	var program_data_len int = len(program_data)
 	for i < program_data_len {
@@ -312,77 +311,62 @@ func Data_to_strings(program_data []byte) []string {
 			case 0xbb:
 				s, ok := tokens_bb[next_byte] // Check if mapping exists
 				if ok {
-					builder.WriteString(s) //Replace if yes, 
+					result = append(result, s) // Replace if yes,
 					step = 2
 				} else {
-					builder.WriteString(string(curr_byte)) // Turn into string if no
+					result = append(result, string(curr_byte)) // Turn into string if no
 				}
 			case 0xef:
 				s, ok := tokens_ef[next_byte] // Check if mapping exists
 				if ok {
-					builder.WriteString(s) // Replace if yes,
+					result = append(result, s) // Replace if yes,
 					step = 2
 				} else {
-					builder.WriteString("Wait ") // Add "wait" command (0xef) if no
+					result = append(result, "Wait ") // Add "wait" command (0xef) if no
 				}
 			case 0x63:
 				s, ok := tokens_63[next_byte] // Check if mapping exists
 				if ok {
-					builder.WriteString(s) // Replace if yes,
+					result = append(result, s) // Replace if yes,
 					step = 2
 				} else {
-					builder.WriteString(string(curr_byte)) // Turn into string if no
+					result = append(result, string(curr_byte)) // Turn into string if no
 				}
 			case 0x5d:
 				s, ok := tokens_5d[next_byte] // Check if mapping exists
 				if ok {
-					builder.WriteString(s) // Replace if yes,
+					result = append(result, s) // Replace if yes,
 					step = 2
 				} else {
-					builder.WriteString("/") // Add division operator (0x5d) if no
+					result = append(result, "/") // Add division operator (0x5d) if no
 				}
 			case 0x7e:
 				s, ok := tokens_7e[next_byte] // Check if mapping exists
 				if ok {
-					builder.WriteString(s) // Replace if yes,
+					result = append(result, s) // Replace if yes
 					step = 2
 				} else {
-					builder.WriteString(string(curr_byte)) // Turn into string if no
+					result = append(result, string(curr_byte)) // Turn into string if no
 				}
 			default:
 				s, ok := tokens[curr_byte] // Check if normal mapping exists
 				if ok {
-					builder.WriteString(s) // Replace if yes,
-					if s == "\n" { // If maps to newline, start newline
-						result[len(result)-1] = builder.String()
-						result = append(result, "")
-						builder.Reset()
-					}
+					result = append(result, s) // Replace if yes,
 				} else {
-					builder.WriteString(string(curr_byte)) // Turn into string if no
+					result = append(result, string(curr_byte)) // Turn into string if no
 				}
 			}
 		} else {
 			s, ok := tokens[curr_byte] // Check if normal mapping exists
 			if ok {
-				builder.WriteString(s) // Rpleace if yes
-				if s == "\n" { // If maps to newline, start newline
-					result[len(result)-1] = builder.String()
-					result = append(result, "")
-					builder.Reset()
-				}
+				result = append(result, s) // Replace if yes,
 			} else {
-				builder.WriteString(string(curr_byte)) // Turn into string if no
+				result = append(result, string(curr_byte)) // Turn into string if no
 			}
 		}
 		i += step
 	}
 	
-	if builder.Len() > 0 { // If builder still has data,
-		result[len(result)-1] = builder.String() // Add it to result
-	}
-
-
 	return result
 }
 
