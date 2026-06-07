@@ -35,23 +35,7 @@ func main() {
 	}
 }
 
-func display_data(program_data_commands []string, input_cursor_row int, input_cursor_col int) {
-	var program_data_lines [][]string
-	var line_arr []string = []string{}
-	
-	for _, command := range program_data_commands {
-		if command == "\n" {
-			line_arr = append(line_arr, " ")
-			program_data_lines = append(program_data_lines, line_arr)
-			line_arr = []string{}
-		} else {
-			line_arr = append(line_arr, command)
-		}
-	}
-	if len(line_arr) > 0 {
-		program_data_lines = append(program_data_lines, line_arr)
-	}
-
+func display_data(program_data_lines [][]string, input_cursor_row int, input_cursor_col int) {
 	if input_cursor_row < 1 {
 		cursor_row = 1
 		input_cursor_row = 1
@@ -70,17 +54,7 @@ func display_data(program_data_commands []string, input_cursor_row int, input_cu
 		input_cursor_col = cursor_col
 	}
 
-	var program_data_line_strings []string = []string{}
-	
-	for _, line_arr := range program_data_lines {
-		var line_builder strings.Builder
-		for _, command := range line_arr {
-			line_builder.WriteString(command)
-		}
-		program_data_line_strings = append(program_data_line_strings, line_builder.String())
-	}
-
-	max_line_num_len := len(strconv.Itoa(len(program_data_line_strings)))
+	max_line_num_len := len(strconv.Itoa(len(program_data_lines)))
 	line_num_fmtstr := fmt.Sprintf("%%%ds %%s", max_line_num_len)
 
 	fmt.Print("\033[H\033[2J")
@@ -89,12 +63,16 @@ func display_data(program_data_commands []string, input_cursor_row int, input_cu
 	half_height := height/2
 	var buffer_row int = cursor_row-1
 	var buffer_start int = max(0, buffer_row-half_height)
-	var buffer_end int = min(buffer_row+half_height, len(program_data_line_strings))
+	var buffer_end int = min(buffer_row+half_height, len(program_data_lines))
 
 	var builder strings.Builder
 
 	for i := buffer_start; i < buffer_end; i++ {
-		fmt.Fprintf(&builder, line_num_fmtstr+"\n", strconv.Itoa(i+1), program_data_line_strings[i])
+		var line_builder strings.Builder
+		for _, command := range program_data_lines[i] {
+			line_builder.WriteString(command)
+		}
+		fmt.Fprintf(&builder, line_num_fmtstr, strconv.Itoa(i+1),line_builder.String())
 	}
 	fmt.Print(builder.String())
 

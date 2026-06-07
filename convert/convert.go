@@ -295,10 +295,12 @@ func Read8xp(path string) []byte {
 	return program_data
 }
 
-func Data_to_strings(program_data []byte) []string {
-	var result []string = []string{""}
+func Data_to_strings(program_data []byte) [][]string {
+	var lines [][]string = [][]string{}
 	var i int = 0
 	var program_data_len int = len(program_data)
+	var line []string = []string{}
+
 	for i < program_data_len {
 		curr_byte := program_data[i]
 		var next_byte byte
@@ -311,63 +313,75 @@ func Data_to_strings(program_data []byte) []string {
 			case 0xbb:
 				s, ok := tokens_bb[next_byte] // Check if mapping exists
 				if ok {
-					result = append(result, s) // Replace if yes,
+					line = append(line, s) // Replace if yes,
 					step = 2
 				} else {
-					result = append(result, string(curr_byte)) // Turn into string if no
+					line= append(line, string(curr_byte)) // Turn into string if no
 				}
 			case 0xef:
 				s, ok := tokens_ef[next_byte] // Check if mapping exists
 				if ok {
-					result = append(result, s) // Replace if yes,
+					line = append(line, s) // Replace if yes,
 					step = 2
 				} else {
-					result = append(result, "Wait ") // Add "wait" command (0xef) if no
+					line = append(line, "Wait ") // Add "wait" command (0xef) if no
 				}
 			case 0x63:
 				s, ok := tokens_63[next_byte] // Check if mapping exists
 				if ok {
-					result = append(result, s) // Replace if yes,
+					line = append(line, s) // Replace if yes,
 					step = 2
 				} else {
-					result = append(result, string(curr_byte)) // Turn into string if no
+					line = append(line, string(curr_byte)) // Turn into string if no
 				}
 			case 0x5d:
 				s, ok := tokens_5d[next_byte] // Check if mapping exists
 				if ok {
-					result = append(result, s) // Replace if yes,
+					line = append(line, s) // Replace if yes,
 					step = 2
 				} else {
-					result = append(result, "/") // Add division operator (0x5d) if no
+					line = append(line, "/") // Add division operator (0x5d) if no
 				}
 			case 0x7e:
 				s, ok := tokens_7e[next_byte] // Check if mapping exists
 				if ok {
-					result = append(result, s) // Replace if yes
+					line = append(line, s) // Replace if yes
 					step = 2
 				} else {
-					result = append(result, string(curr_byte)) // Turn into string if no
+					line = append(line, string(curr_byte)) // Turn into string if no
 				}
 			default:
 				s, ok := tokens[curr_byte] // Check if normal mapping exists
 				if ok {
-					result = append(result, s) // Replace if yes,
+					line = append(line, s) // Replace if yes,
+					if s == "\n" {
+						lines = append(lines, line)
+						line = []string{}
+					}
 				} else {
-					result = append(result, string(curr_byte)) // Turn into string if no
+					line = append(line, string(curr_byte)) // Turn into string if no
 				}
 			}
 		} else {
 			s, ok := tokens[curr_byte] // Check if normal mapping exists
 			if ok {
-				result = append(result, s) // Replace if yes,
+				line = append(line, s) // Replace if yes,
+				if s == "\n" {
+					lines = append(lines, line)
+					line = []string{}
+				}
 			} else {
-				result = append(result, string(curr_byte)) // Turn into string if no
+				line = append(line, string(curr_byte)) // Turn into string if no
 			}
 		}
 		i += step
 	}
+
+	if len(line) > 0 {
+		lines = append(lines, line)
+	}
 	
-	return result
+	return lines
 }
 
 func init() {
