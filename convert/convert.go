@@ -268,7 +268,9 @@ var tokens_7e = map[byte]string{
 	0x07: "Dot-Thick", //
 }
 
-var reverse_tokens = map[string][]byte{}
+var reverse_tokens map[string][]byte = map[string][]byte{}
+
+var Tokens []string
 
 func Read8xp(path string) []byte {
 	path = strings.TrimSpace(path)   // Remove whitespace
@@ -378,6 +380,7 @@ func Data_to_strings(program_data []byte) [][]string {
 	}
 
 	if len(line) > 0 {
+		line = append(line, "\n")
 		lines = append(lines, line)
 	}
 	
@@ -387,20 +390,26 @@ func Data_to_strings(program_data []byte) [][]string {
 func init() {
 	for key, val := range tokens {
 		reverse_tokens[val] = []byte{key}
+		Tokens = append(Tokens, val)
 	}
 	for key, val := range tokens_bb {
 		reverse_tokens[val] = []byte{0xbb, key}
+		Tokens = append(Tokens, val)
 	}
 	for key, val := range tokens_ef {
 		reverse_tokens[val] = []byte{0xef, key}
+		Tokens = append(Tokens, val)
 	}
 	for key, val := range tokens_63 {
 		reverse_tokens[val] = []byte{0x63, key}
+		Tokens = append(Tokens, val)
 	}
 	for key, val := range tokens_5d {
 		reverse_tokens[val] = []byte{0x5d, key}
+		Tokens = append(Tokens, val)
 	}
 	for key, val := range tokens_7e {
 		reverse_tokens[val] = []byte{0x7e, key}
+		Tokens = append(Tokens, val)
 	}
 }

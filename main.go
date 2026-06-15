@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/term"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func main() {
@@ -63,7 +64,7 @@ func display_data(program_data_lines [][]string, cursor_row int, cursor_col int,
 	fmt.Print("\033[H\033[2J")
 
 	_, height := get_term_size()
-	height--
+	height -= 6
 	half_height := height/2
 	var buffer_row int = cursor_row-1
 	var buffer_start int = max(0, buffer_row-half_height)
@@ -84,7 +85,14 @@ func display_data(program_data_lines [][]string, cursor_row int, cursor_col int,
 	case 0:
 		mode_string = "NORMAL"
 	}
-	fmt.Print(mode_string, "   ", string(text_buffer))
+	fmt.Print(mode_string, "   ", string(text_buffer), "\n")
+	
+	if len(text_buffer) > 0 {
+		var command_matches []string = fuzzy.FindFold(string(text_buffer), convert.Tokens)
+		for _, command := range command_matches[0:min(5, len(command_matches))] {
+			fmt.Println(command)
+		}
+	}
 
 	var screen_row int = buffer_row-buffer_start
 	var screen_col int = max_line_num_len+2
