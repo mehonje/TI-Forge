@@ -127,9 +127,11 @@ func display_data(state State) State {
 			for _, command := range command_matches[start:end] { // and print the first 5
 				fmt.Println(command)
 			}
-			if slices.Equal(state.Input, []byte{13}) {
+			if slices.Equal(state.Input, []byte{13}) { // [enter]
 				state.Program_data[state.Cursor_row - 1] = slices.Insert(state.Program_data[state.Cursor_row - 1], state.Cursor_col-1, command_matches[start])
 				state.Input = []byte{}
+				state.Suggestion_idx = 0
+				state.Text_buffer = []rune{}
 				_ = display_data(state)
 			}
 		}
@@ -225,6 +227,8 @@ func process_command_input(state State) (State) {
 			switch split_command[0] {
 				case "w": // write, second element is file path
 					err := convert.Txt_to_eightxp(split_command[1], state.Program_data)
+					state.Mode = 0
+					state.Text_buffer = []rune{}
 					if err != nil {
 						state.Text_buffer = []rune(err.Error())
 					}
