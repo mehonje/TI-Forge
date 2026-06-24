@@ -5,22 +5,40 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"ti_forge/convert"
 	"unicode/utf8"
 
-	"golang.org/x/term"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"golang.org/x/term"
 )
+
+type State struct {
+	Quit bool
+	Cursor_row int
+	Cursor_col int
+	Mode int
+	Text_buffer []rune
+	Suggestion_idx int
+	Input []byte
+	Program_data [][]string
+}
 
 func main() {
 	enable_utf8()
 
-	var cursor_row int = 1
-	var cursor_col int = 1
-	var text_buffer []rune = []rune{}
-	var mode int = 0
+	state := State{
+		Quit: false,
+		Cursor_row: 1,
+		Cursor_col: 1,
+		Mode: 0,
+		Text_buffer: []rune{},
+		Suggestion_idx: 0,
+		Input: []byte{},
+		Program_data: [][]string{},
+	}
 	
 	fd := int(os.Stdin.Fd())
 	cooked_state, err := term.MakeRaw(fd)
@@ -29,115 +47,195 @@ func main() {
 	}
 	defer term.Restore(fd, cooked_state)
 
-	var program_data []byte = convert.Read8xp("C:/Users/Jack/Onedrive/Desktop/go_work/ti_forge/TEST3.8xp")
-	program_data_commands := convert.Data_to_strings(program_data)
-	for {
-		cursor_row, cursor_col = display_data(program_data_commands, cursor_row, cursor_col, text_buffer, mode)
+	var program_data []byte = []byte{}
+	var program_metadata [4]string = [4]string{}
+	program_data, program_metadata = convert.Read8xp("C:/Users/Jack/Onedrive/Desktop/go_work/ti_forge/TEST.8xp")
 
-		var quit bool = false
-		quit, text_buffer, cursor_row, cursor_col = process_input(get_input(), cursor_row, cursor_col, text_buffer)
+	program_data_commands := convert.Data_to_strings(program_data, program_metadata)
+	state.Program_data = program_data_commands
+	for {
+		state = display_data(state)
+		state = get_input(state)
+		state = process_input(state)
 		
-		if quit {
+		if state.Quit {
 			return
 		}
 	}
 }
 
-func display_data(program_data_lines [][]string, cursor_row int, cursor_col int, text_buffer []rune, mode int) (int, int) {
-	if cursor_row < 1 {
-		cursor_row = 1
+func display_data(state State) State {
+	if state.Cursor_row < 1 {
+		state.Cursor_row = 1
 	}
-	if cursor_row > len(program_data_lines) {
-		cursor_row = len(program_data_lines)
+	if state.Cursor_row > len(state.Program_data) {
+		state.Cursor_row = len(state.Program_data)
 	}
-	if cursor_col < 1 {
-		cursor_col = 1
+	if state.Cursor_col < 1 {
+		state.Cursor_col = 1
 	}
-	var line_length int = len(program_data_lines[cursor_row-1])
-	if cursor_col > line_length {
-		cursor_col = line_length
+	var line_length int = len(state.Program_data[state.Cursor_row-1])
+	if state.Cursor_col > line_length {
+		state.Cursor_col = line_length
 	}
 
-	max_line_num_len := len(strconv.Itoa(len(program_data_lines)))
+	max_line_num_len := len(strconv.Itoa(len(state.Program_data)))
 	line_num_fmtstr := fmt.Sprintf("%%%ds %%s", max_line_num_len)
-
-	fmt.Print("\033[H\033[2J")
 
 	_, height := get_term_size()
 	height -= 6
 	half_height := height/2
-	var buffer_row int = cursor_row-1
+	var buffer_row int = state.Cursor_row-1
 	var buffer_start int = max(0, buffer_row-half_height)
-	var buffer_end int = min(buffer_row+half_height, len(program_data_lines))
+	var buffer_end int = min(buffer_row+half_height, len(state.Program_data))
 
 	var builder strings.Builder
 
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
-		for _, command := range program_data_lines[i] {
+		for _, command := range state.Program_data[i] {
 			line_builder.WriteString(command)
 		}
 		fmt.Fprintf(&builder, line_num_fmtstr, strconv.Itoa(i+1),line_builder.String())
 	}
-	fmt.Print(builder.String())
+	fmt.Print("\033[H\033[2J") // clear screen
+	fmt.Print(builder.String()) // print program slice
+
 	var mode_string string = ""
-	switch mode {
-	case 0:
-		mode_string = "NORMAL"
+	switch state.Mode {
+		case 0:
+			mode_string = "NORMAL"
+		case 1:
+			mode_string = "INSERT"
+		case 2:
+			mode_string = "COMMAND"
 	}
-	fmt.Print(mode_string, "   ", string(text_buffer), "\n")
+	fmt.Print(mode_string, "   ", string(state.Text_buffer), "\n")
 	
-	if len(text_buffer) > 0 {
-		var command_matches []string = fuzzy.FindFold(string(text_buffer), convert.Tokens)
-		for _, command := range command_matches[0:min(5, len(command_matches))] {
-			fmt.Println(command)
+	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
+		var command_matches []string = fuzzy.FindFold(string(state.Text_buffer), convert.Tokens) // find commands that match the text buffer,
+		
+		if state.Suggestion_idx >= len(command_matches) {
+			state.Suggestion_idx = max(len(command_matches) - 1, 0)
+		} else if state.Suggestion_idx < 0 {
+			state.Suggestion_idx = 0
+		}
+
+		if len(command_matches) > 0 {
+			var start int = min(state.Suggestion_idx, len(command_matches))
+			var end int = min(5 + state.Suggestion_idx, len(command_matches))
+			for _, command := range command_matches[start:end] { // and print the first 5
+				fmt.Println(command)
+			}
+			if slices.Equal(state.Input, []byte{13}) {
+				state.Program_data[state.Cursor_row - 1] = slices.Insert(state.Program_data[state.Cursor_row - 1], state.Cursor_col-1, command_matches[start])
+				state.Input = []byte{}
+				_ = display_data(state)
+			}
 		}
 	}
 
 	var screen_row int = buffer_row-buffer_start
 	var screen_col int = max_line_num_len+2
-	for i := 0; i < cursor_col-1; i++ {
-    screen_col += utf8.RuneCountInString(program_data_lines[cursor_row-1][i])
-	}
+	for i := 0; i < state.Cursor_col-1; i++ {
+    screen_col += utf8.RuneCountInString(state.Program_data[state.Cursor_row-1][i])
+}
 
 	fmt.Printf("\033[%d;%dH", screen_row+1, screen_col) // move cursor
 	
-	return cursor_row, cursor_col
+	return state
 }
 
-func get_input() byte {
-    buf := make([]byte, 1)
+func get_input(state State) State {
+    buf := make([]byte, 10)
     n, err := os.Stdin.Read(buf)
     if err != nil || n == 0 {
-        return 0
+        state.Input = []byte{}
+				return state
     }
-    return buf[0]
+		state.Input = buf[:n]
+		return state
 }
 
-func process_input(input byte, cursor_row int, cursor_col int, text_buffer []rune) (bool, []rune, int, int) {
-	var quit bool = false
-	var new_text_buffer []rune = text_buffer
-
-	switch input {
-	case 113: // "q"
-		quit = true
+func process_input(state State) (State) {
+	switch state.Mode {
+		case 0: state = process_normal_input(state)
+		case 1: state = process_insert_input(state)
+		case 2: state = process_command_input(state)
 	}
 
-	var rune_input rune = rune(input)
-	switch rune_input {
-	case 'h':
-		cursor_col--
-	case 'l':
-		cursor_col++
-	case 'j':
-		cursor_row++
-	case 'k':
-		cursor_row--
-	default:
-		new_text_buffer = append(new_text_buffer, rune_input)
+	switch {
+		case slices.Equal(state.Input, []byte{27}): // [esc]
+			state.Mode = 0
+			state.Text_buffer = []rune{}
 	}
 
-	return quit, new_text_buffer, cursor_row, cursor_col
+	return state
+}
+
+func process_normal_input(state State) (State) {
+	switch {
+		case slices.Equal(state.Input, []byte{113}): // [q], quit
+			state.Quit = true
+		case slices.Equal(state.Input, []byte{104}): // [h], left
+			state.Cursor_col--
+		case slices.Equal(state.Input, []byte{108}): // [l], right
+			state.Cursor_col++
+		case slices.Equal(state.Input, []byte{106}): // [j], down
+			state.Cursor_row++
+		case slices.Equal(state.Input, []byte{107}): // [k], up
+			state.Cursor_row--
+		case slices.Equal(state.Input, []byte{105}): // [i], enter insert mode
+			state.Mode = 1
+		case slices.Equal(state.Input, []byte{58}): // [:], enter command mode
+			state.Mode = 2
+	}
+
+	return state
+}
+
+func process_insert_input(state State) (State) {
+	switch {
+		case slices.Equal(state.Input, []byte{127}): // [backspace]
+			if len(state.Text_buffer) > 0 {
+				state.Text_buffer = state.Text_buffer[:len(state.Text_buffer) - 1]
+			}
+		case slices.Equal(state.Input, []byte{9}): // [tab], suggestion down
+			state.Suggestion_idx++
+		case slices.Equal(state.Input, []byte{27, 91, 90}): // [shift][tab], suggestion up
+			state.Suggestion_idx--
+		case slices.Equal(state.Input, []byte{13}): // [enter]
+		default:
+			if len(state.Input) == 1 {
+				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
+			}
+	}
+
+	return state
+}
+
+func process_command_input(state State) (State) {
+	switch {
+		case slices.Equal(state.Input, []byte{127}): // [backspace]
+			if len(state.Text_buffer) > 0 {
+				state.Text_buffer = state.Text_buffer[:len(state.Text_buffer) - 1]
+			}
+		case slices.Equal(state.Input, []byte{13}): // [enter]
+			var split_command []string = strings.Split(string(state.Text_buffer), " ")
+			switch split_command[0] {
+				case "w": // write, second element is file path
+					err := convert.Txt_to_eightxp(split_command[1], state.Program_data)
+					if err != nil {
+						state.Text_buffer = []rune(err.Error())
+					}
+			}
+		default: 
+			if len(state.Input) == 1 {
+				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
+			}
+	}
+
+	return state
 }
 
 func get_term_size() (int, int) {
