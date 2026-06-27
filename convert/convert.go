@@ -302,8 +302,22 @@ func Read8xp(path string) ([]byte, [4]string) {
 func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string {
 	var lines [][]string = [][]string{}
 	
-	lines = append(lines, []string{program_metadata[0], "\n"})
-	lines = append(lines, []string{program_metadata[1], "\n"})
+	lines = append(lines, []string{})
+	for _, char := range program_metadata[0] {
+		if char == rune(0x00) {
+			break
+		}
+		lines[0] = append(lines[0], string(char))
+	}
+	lines[0] = append(lines[0], "\n")
+	lines = append(lines, []string{})
+	for _, char := range program_metadata[1] {
+		if char == rune(0x00) {
+			break
+		}
+		lines[1] = append(lines[1], string(char))
+	}
+	lines[1] = append(lines[1], "\n")
 	lines = append(lines, []string{program_metadata[2], "\n"})
 	lines = append(lines, []string{program_metadata[3], "\n"})
 
@@ -400,12 +414,40 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 		return errors.New("Progam must be at least 4 lines")
 	}
 
-	var metadata [4]string = [4]string{}
-	metadata[0] = strings.Join(program_lines[0][:len(program_lines[0])-1], "")
-	metadata[1] = strings.Join(program_lines[1][:len(program_lines[1])-1], "")
-	metadata[2] = strings.Join(program_lines[2][:len(program_lines[2])-1], "")
-	metadata[3] = strings.Join(program_lines[3][:len(program_lines[3])-1], "")
-
+	var metadata [4][]byte = [4][]byte{}
+	for _, command := range program_lines[0][:len(program_lines[0]) - 1] {
+		arr, ok := reverse_tokens[command]
+		if ok {
+			for _, token_byte := range arr {
+				metadata[0] = append(metadata[0], token_byte)	
+			}
+		}
+	}
+	for _, command := range program_lines[1][:len(program_lines[1]) - 1] {
+		arr, ok := reverse_tokens[command]
+		if ok {
+			for _, token_byte := range arr {
+				metadata[1] = append(metadata[1], token_byte)	
+			}
+		}
+	}
+	
+	{
+		var string_byte string = strings.Join(program_lines[2][:len(program_lines[2])-1], "")
+		b, err := hex.DecodeString(string_byte)
+		if err != nil {
+			return errors.New("Failed to convert string\"" + string_byte + "\" to byte")
+		}
+		metadata[2] = b
+	}
+	{
+		var string_byte string = strings.Join(program_lines[3][:len(program_lines[3])-1], "")
+		b, err := hex.DecodeString(string_byte)
+		if err != nil {
+			return errors.New("Failed to convert string\"" + string_byte + "\" to byte")
+		}
+		metadata[3] = b
+	}
 	if len(metadata[0]) > 8 {
 		return errors.New("Program name (line 1) cannot be longer than 8 characters")
 	}
@@ -427,26 +469,14 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 	program_byte_data = append(program_byte_data, 0x0d)       // Append flag
 	program_byte_data = append(program_byte_data, 0x00)       // Append unknown
 	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder body_and_checksum_length. Set later
-	{                                                         // Append file_type
-		b, err := hex.DecodeString(metadata[2])
-		if err != nil {
-			return errors.New("Failed to convert string\"" + metadata[2] + "\"to byte")
-		}
-		program_byte_data = append(program_byte_data, b[0])
-	}
+	program_byte_data = append(program_byte_data, metadata[2][0]) // Append file type
 	{ // Append program_name
 		name_padded := make([]byte, 8)
 		copy(name_padded, []byte(metadata[0]))
 		program_byte_data = append(program_byte_data, name_padded...)
 	}
 	program_byte_data = append(program_byte_data, 0x00) // Append version
-	{                                                   // Append is_archived
-		b, err := hex.DecodeString(metadata[3])
-		if err != nil {
-			return errors.New("Failed to convert string\"" + metadata[3] + "\"to byte")
-		}
-		program_byte_data = append(program_byte_data, b[0])
-	}
+	program_byte_data = append(program_byte_data, metadata[3][0]) // Append is_archived
 	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder body_and_checksum_length_2. Set later
 	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder body_length. Set later
 
