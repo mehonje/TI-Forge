@@ -113,7 +113,7 @@ func display_data(state State) State {
 	fmt.Print(mode_string, "   ", string(state.Text_buffer), "\n")
 	
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
-		var command_matches []string = fuzzy.FindFold(string(state.Text_buffer), convert.Tokens) // find commands that match the text buffer,
+		var command_matches []string = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
 		
 		if state.Suggestion_idx >= len(command_matches) {
 			state.Suggestion_idx = max(len(command_matches) - 1, 0)
