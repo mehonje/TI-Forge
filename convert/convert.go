@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/mehonje/TI-Convert/tokens"
+	"slices"
 )
 
 var Commands []string
@@ -302,4 +303,6 @@ func init() {
 	for _, val := range tokens.Tokens_7e {
 		Commands = append(Commands, val)
 	}
+	
+	slices.Sort(Commands)
 }
