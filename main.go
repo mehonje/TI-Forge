@@ -134,6 +134,7 @@ func display_data(state State) State {
 	fmt.Print(builder.String()) // print program slice
 
 	var mode_string string = ""
+	var prepend_string string = ""
 	switch state.Mode {
 		case 0:
 			mode_string = "NORMAL"
@@ -141,8 +142,9 @@ func display_data(state State) State {
 			mode_string = "INSERT"
 		case 2:
 			mode_string = "COMMAND"
+			prepend_string = ":"
 	}
-	fmt.Print(mode_string, "   ", string(state.Text_buffer), "\n")
+	fmt.Print(mode_string, "   ", prepend_string, string(state.Text_buffer), "\n")
 	
 	for _, command := range display_command_matches { // print the first 5 commands from the selected command
 				fmt.Println(command)
@@ -182,8 +184,6 @@ func process_input(state State) (State) {
 
 func process_normal_input(state State) (State) {
 	switch {
-		case slices.Equal(state.Input, []byte{113}): // [q], quit
-			state.Quit = true
 		case slices.Equal(state.Input, []byte{104}): // [h], left
 			state.Cursor_col--
 		case slices.Equal(state.Input, []byte{108}): // [l], right
@@ -245,6 +245,8 @@ func process_command_input(state State) (State) {
 					if err != nil {
 						state.Text_buffer = []rune(err.Error())
 					}
+				case "q": // quit
+					state.Quit = true
 			}
 		default: 
 			if len(state.Input) == 1 {
