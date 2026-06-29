@@ -31,8 +31,8 @@ func main() {
 
 	state := State{
 		Quit: false,
-		Cursor_row: 1,
-		Cursor_col: 1,
+		Cursor_row: 0,
+		Cursor_col: 0,
 		Mode: 0,
 		Text_buffer: []rune{},
 		Suggestion_idx: 0,
@@ -65,25 +65,25 @@ func main() {
 }
 
 func display_data(state State) State {
-	if state.Cursor_row < 1 {
-		state.Cursor_row = 1
+	if state.Cursor_row < 0 {
+		state.Cursor_row = 0
 	}
-	if state.Cursor_row > len(state.Program_data) {
-		state.Cursor_row = len(state.Program_data)
+	if state.Cursor_row >= len(state.Program_data) {
+		state.Cursor_row = len(state.Program_data) - 1
 	}
-	if state.Cursor_col < 1 {
-		state.Cursor_col = 1
+	if state.Cursor_col < 0 {
+		state.Cursor_col = 0
 	}
-	var line_length int = len(state.Program_data[state.Cursor_row-1])
-	if state.Cursor_col > line_length {
-		state.Cursor_col = line_length
+	var line_length int = len(state.Program_data[state.Cursor_row])
+	if state.Cursor_col >= line_length {
+		state.Cursor_col = line_length - 1
 	}
 
 	max_line_num_len := len(strconv.Itoa(len(state.Program_data)))
 	line_num_fmtstr := fmt.Sprintf("%%%ds %%s", max_line_num_len)
 	
 	var command_matches []string
-	var display_command_matches [5]string = [5]string{"", "", "", "", ""}
+	var display_command_matches []string
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
 		command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
 		
@@ -94,12 +94,12 @@ func display_data(state State) State {
 		}
 
 		if len(command_matches) > 0 {
-			var start int = min(state.Suggestion_idx, len(command_matches))
+			var start int = min(state.Suggestion_idx, len(command_matches) - 1)
 			var end int = min(5 + state.Suggestion_idx, len(command_matches))
-			display_command_matches = [5]string(command_matches[start:end])
+			display_command_matches = command_matches[start:end]
 
 			if slices.Equal(state.Input, []byte{13}) { // [enter]
-				state.Program_data[state.Cursor_row - 1] = slices.Insert(state.Program_data[state.Cursor_row - 1], state.Cursor_col-1, command_matches[start])
+				state.Program_data[state.Cursor_row] = slices.Insert(state.Program_data[state.Cursor_row], state.Cursor_col, command_matches[start])
 				state.Input = []byte{}
 				state.Suggestion_idx = 0
 				state.Text_buffer = []rune{}
@@ -110,7 +110,7 @@ func display_data(state State) State {
 	_, height := get_term_size()
 	height -= 6
 	half_height := height/2
-	var buffer_row int = state.Cursor_row-1
+	var buffer_row int = state.Cursor_row
 	var buffer_start int = max(0, buffer_row-half_height)
 	var buffer_end int = min(buffer_row+half_height, len(state.Program_data))
 
@@ -126,8 +126,8 @@ func display_data(state State) State {
 
 	var screen_row int = buffer_row-buffer_start
 	var screen_col int = max_line_num_len+2
-	for i := 0; i < state.Cursor_col-1; i++ {
-    screen_col += utf8.RuneCountInString(state.Program_data[state.Cursor_row-1][i])
+	for i := 0; i < state.Cursor_col; i++ {
+    screen_col += utf8.RuneCountInString(state.Program_data[state.Cursor_row][i])
 	}
 
 	fmt.Print("\033[H\033[2J") // clear screen
@@ -148,7 +148,7 @@ func display_data(state State) State {
 				fmt.Println(command)
 	}
 
-	fmt.Printf("\033[%d;%dH", screen_row+1, screen_col) // move cursor
+	fmt.Printf("\033[%d;%dH", screen_row + 1, screen_col) // move cursor
 	
 	return state
 }
@@ -196,6 +196,14 @@ func process_normal_input(state State) (State) {
 			state.Mode = 1
 		case slices.Equal(state.Input, []byte{58}): // [:], enter command mode
 			state.Mode = 2
+		case slices.Equal(state.Input, []byte{120}): // [x], delete command at cursor
+			state.Program_data[state.Cursor_row] = slices.Delete(state.Program_data[state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
+			if slices.Equal(state.Program_data[state.Cursor_row], []string{}) {
+				state.Program_data = slices.Delete(state.Program_data, state.Cursor_row, state.Cursor_row + 1)
+				if len(state.Program_data) == 0 {
+					state.Program_data = [][]string{[]string{""}}
+				}
+			}
 	}
 
 	return state
