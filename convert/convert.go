@@ -284,22 +284,22 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 }
 
 func init() {
-	for key, val := range tokens.Tokens {
+	for _, val := range tokens.Tokens {
 		Commands = append(Commands, val)
 	}
-	for key, val := range tokens.Tokens_bb {
+	for _, val := range tokens.Tokens_bb {
 		Commands = append(Commands, val)
 	}
-	for key, val := range tokens.Tokens_ef {
-		Commands = append(Comands, val)
-	}
-	for key, val := range tokens.Tokens_63 {
+	for _, val := range tokens.Tokens_ef {
 		Commands = append(Commands, val)
 	}
-	for key, val := range tokens.Tokens_5d {
+	for _, val := range tokens.Tokens_63 {
 		Commands = append(Commands, val)
 	}
-	for key, val := range tokens.Tokens_7e {
+	for _, val := range tokens.Tokens_5d {
+		Commands = append(Commands, val)
+	}
+	for _, val := range tokens.Tokens_7e {
 		Commands = append(Commands, val)
 	}
 }
