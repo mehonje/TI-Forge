@@ -47,12 +47,7 @@ func main() {
 	}
 	defer term.Restore(fd, cooked_state)
 
-	var program_data []byte = []byte{}
-	var program_metadata [4]string = [4]string{}
-	program_data, program_metadata = convert.Read8xp("C:/Users/Jack/Onedrive/Desktop/go_work/ti_forge/TEST.8xp")
-
-	program_data_commands := convert.Data_to_strings(program_data, program_metadata)
-	state.Program_data = program_data_commands
+	state.Program_data = [][]string{{"\n"}}
 	for {
 		state = display_data(state)
 		state = get_input(state)
@@ -240,19 +235,33 @@ func process_command_input(state State) (State) {
 			switch split_command[0] {
 				case "w": // write, second element is file path
 					err := convert.Txt_to_eightxp(split_command[1], state.Program_data)
-					state.Mode = 0
-					state.Text_buffer = []rune{}
+					state = reset_state(state)
 					if err != nil {
 						state.Text_buffer = []rune(err.Error())
 					}
 				case "q": // quit
 					state.Quit = true
+				case "e": //edit, second element is file path
+					var program_data []byte = []byte{}
+					var program_metadata [4]string = [4]string{}
+					program_data, program_metadata = convert.Read8xp(split_command[1])
+					state = reset_state(state)
+					
+					program_data_commands := convert.Data_to_strings(program_data, program_metadata)
+					state.Program_data = program_data_commands
 			}
 		default: 
 			if len(state.Input) == 1 {
 				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
 			}
 	}
+
+	return state
+}
+
+func reset_state(state State) State {
+	state.Mode = 0
+	state.Text_buffer = []rune{}
 
 	return state
 }
