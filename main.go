@@ -238,17 +238,24 @@ func process_command_input(state State) (State) {
 					state = reset_state(state)
 					if err != nil {
 						state.Text_buffer = []rune(err.Error())
+						state.Mode = 0
 					}
 				case "q": // quit
 					state.Quit = true
-				case "e": //edit, second element is file path
+					state = reset_state(state)
+				case "e": // edit, second element is file path
 					var program_data []byte = []byte{}
 					var program_metadata [4]string = [4]string{}
-					program_data, program_metadata = convert.Read8xp(split_command[1])
+					program_data, program_metadata, err := convert.Read8xp(split_command[1])
 					state = reset_state(state)
-					
-					program_data_commands := convert.Data_to_strings(program_data, program_metadata)
-					state.Program_data = program_data_commands
+
+					if err != nil {
+						state.Text_buffer = []rune(err.Error())
+						state.Mode = 0
+					} else {
+						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
+						state.Program_data = program_data_commands
+					}
 			}
 		default: 
 			if len(state.Input) == 1 {

@@ -1,19 +1,20 @@
 package convert
 
 import (
-	"encoding/hex"
-	"log"
-	"os"
-	"strings"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
-	"github.com/mehonje/TI-Convert/tokens"
+	"fmt"
+	"os"
 	"slices"
+	"strings"
+
+	"github.com/mehonje/TI-Convert/tokens"
 )
 
 var Commands []string
 
-func Read8xp(path string) ([]byte, [4]string) {
+func Read8xp(path string) ([]byte, [4]string, error) {
 	path = strings.TrimSpace(path)   // Remove whitespace
 	if !strings.HasSuffix(path, ".8xp") { // If file path doesn't have ".8xp" suffix,
 		path = path + ".8xp" // Append it
@@ -24,7 +25,7 @@ func Read8xp(path string) ([]byte, [4]string) {
 	var program_data []byte
 	byte_data, err := os.ReadFile(path) // Read file data
 	if err != nil {
-		log.Fatal("Failed to read file data: ", err)
+		return []byte{}, [4]string{}, fmt.Errorf("Failed to read %s: %w", path, err)
 	}
 
 	if len(byte_data) > 76 { // If data is more than 76 bytes long,
@@ -35,7 +36,7 @@ func Read8xp(path string) ([]byte, [4]string) {
 		program_data = byte_data[74 : len(byte_data)-2]                 // Store bytes 74 - end-2 (program), remove the first 74 bytes (program metadata) and last 2 bytes (checksum)
 	}
 
-	return program_data, program_metadata
+	return program_data, program_metadata, nil
 }
 
 func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string {
