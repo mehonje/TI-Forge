@@ -232,43 +232,37 @@ func process_command_input(state State) (State) {
 			}
 		case slices.Equal(state.Input, []byte{13}): // [enter]
 			var split_command []string = strings.Split(string(state.Text_buffer), " ")
+
+			state.Mode = 0
+			state.Text_buffer = []rune{}
+
 			switch split_command[0] {
 				case "w": // write, second element is file path
 					err := convert.Txt_to_eightxp(split_command[1], state.Program_data)
-					state = reset_state(state)
 					if err != nil {
 						state.Text_buffer = []rune(err.Error())
-						state.Mode = 0
 					}
 				case "q": // quit
 					state.Quit = true
-					state = reset_state(state)
 				case "e": // edit, second element is file path
 					var program_data []byte = []byte{}
 					var program_metadata [4]string = [4]string{}
 					program_data, program_metadata, err := convert.Read8xp(split_command[1])
-					state = reset_state(state)
 
 					if err != nil {
 						state.Text_buffer = []rune(err.Error())
-						state.Mode = 0
 					} else {
 						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
 						state.Program_data = program_data_commands
 					}
+				default:
+					state.Text_buffer = []rune("Unknown command \"" + split_command[0] + "\"")
 			}
 		default: 
 			if len(state.Input) == 1 {
 				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
 			}
 	}
-
-	return state
-}
-
-func reset_state(state State) State {
-	state.Mode = 0
-	state.Text_buffer = []rune{}
 
 	return state
 }
