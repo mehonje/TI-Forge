@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -23,7 +24,9 @@ type State struct {
 	Text_buffer []rune
 	Suggestion_idx int
 	Input []byte
-	Program_data [][]string
+	Program_data [][][]string
+	File_names []string
+	Buffer_idx int
 }
 
 func main() {
@@ -37,7 +40,9 @@ func main() {
 		Text_buffer: []rune{},
 		Suggestion_idx: 0,
 		Input: []byte{},
-		Program_data: [][]string{},
+		Program_data: [][][]string{{{"\n"}}},
+		File_names: []string{""},
+		Buffer_idx: 0,
 	}
 	
 	fd := int(os.Stdin.Fd())
@@ -47,7 +52,6 @@ func main() {
 	}
 	defer term.Restore(fd, cooked_state)
 
-	state.Program_data = [][]string{{"\n"}}
 	for {
 		state = display_data(state)
 		state = get_input(state)
@@ -63,18 +67,18 @@ func display_data(state State) State {
 	if state.Cursor_row < 0 {
 		state.Cursor_row = 0
 	}
-	if state.Cursor_row >= len(state.Program_data) {
-		state.Cursor_row = len(state.Program_data) - 1
+	if state.Cursor_row >= len(state.Program_data[state.Buffer_idx]) {
+		state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
 	}
 	if state.Cursor_col < 0 {
 		state.Cursor_col = 0
 	}
-	var line_length int = len(state.Program_data[state.Cursor_row])
+	var line_length int = len(state.Program_data[state.Buffer_idx][state.Cursor_row])
 	if state.Cursor_col >= line_length {
 		state.Cursor_col = line_length - 1
 	}
 
-	max_line_num_len := len(strconv.Itoa(len(state.Program_data)))
+	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
 	line_num_fmtstr := fmt.Sprintf("%%%ds %%s", max_line_num_len)
 	
 	var command_matches []string
@@ -94,7 +98,7 @@ func display_data(state State) State {
 			display_command_matches = command_matches[start:end]
 
 			if slices.Equal(state.Input, []byte{13}) { // [enter]
-				state.Program_data[state.Cursor_row] = slices.Insert(state.Program_data[state.Cursor_row], state.Cursor_col, command_matches[start])
+				state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command_matches[start])
 				state.Input = []byte{}
 				state.Suggestion_idx = 0
 				state.Text_buffer = []rune{}
@@ -107,13 +111,13 @@ func display_data(state State) State {
 	half_height := height/2
 	var buffer_row int = state.Cursor_row
 	var buffer_start int = max(0, buffer_row-half_height)
-	var buffer_end int = min(buffer_row+half_height, len(state.Program_data))
+	var buffer_end int = min(buffer_row+half_height, len(state.Program_data[state.Buffer_idx]))
 
 	var builder strings.Builder
 
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
-		for _, command := range state.Program_data[i] {
+		for _, command := range state.Program_data[state.Buffer_idx][i] {
 			line_builder.WriteString(command)
 		}
 		fmt.Fprintf(&builder, line_num_fmtstr, strconv.Itoa(i+1),line_builder.String())
@@ -122,11 +126,13 @@ func display_data(state State) State {
 	var screen_row int = buffer_row-buffer_start
 	var screen_col int = max_line_num_len+2
 	for i := 0; i < state.Cursor_col; i++ {
-    screen_col += utf8.RuneCountInString(state.Program_data[state.Cursor_row][i])
+    screen_col += utf8.RuneCountInString(state.Program_data[state.Buffer_idx][state.Cursor_row][i])
 	}
 
 	fmt.Print("\033[H\033[2J") // clear screen
 	fmt.Print(builder.String()) // print program slice
+
+	fmt.Println(state.File_names[state.Buffer_idx])
 
 	var mode_string string = ""
 	var prepend_string string = ""
@@ -141,8 +147,11 @@ func display_data(state State) State {
 	}
 	fmt.Print(mode_string, "   ", prepend_string, string(state.Text_buffer), "\n")
 	
-	for _, command := range display_command_matches { // print the first 5 commands from the selected command
-				fmt.Println(command)
+	for idx, command := range display_command_matches { // print the first 5 commands from the selected command
+				fmt.Print(command)
+				if idx <= 3 {
+					fmt.Print("\n")
+				}
 	}
 
 	fmt.Printf("\033[%d;%dH", screen_row + 1, screen_col) // move cursor
@@ -192,11 +201,11 @@ func process_normal_input(state State) (State) {
 		case slices.Equal(state.Input, []byte{58}): // [:], enter command mode
 			state.Mode = 2
 		case slices.Equal(state.Input, []byte{120}): // [x], delete command at cursor
-			state.Program_data[state.Cursor_row] = slices.Delete(state.Program_data[state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
-			if slices.Equal(state.Program_data[state.Cursor_row], []string{}) {
-				state.Program_data = slices.Delete(state.Program_data, state.Cursor_row, state.Cursor_row + 1)
+			state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Delete(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
+			if slices.Equal(state.Program_data[state.Buffer_idx][state.Cursor_row], []string{}) {
+				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
 				if len(state.Program_data) == 0 {
-					state.Program_data = [][]string{[]string{""}}
+					state.Program_data = [][][]string{{{""}}}
 				}
 			}
 	}
@@ -237,10 +246,17 @@ func process_command_input(state State) (State) {
 			state.Text_buffer = []rune{}
 
 			switch split_command[0] {
-				case "w": // write, second element is file path
-					err := convert.Txt_to_eightxp(split_command[1], state.Program_data)
-					if err != nil {
-						state.Text_buffer = []rune(err.Error())
+				case "w": // write, second element is file path (if it exists)
+					if len(split_command) > 1 {
+						err := convert.Txt_to_eightxp(split_command[1], state.Program_data[state.Buffer_idx])
+						if err != nil {
+							state.Text_buffer = []rune(err.Error())
+						}
+					} else {
+						err := convert.Txt_to_eightxp(state.File_names[state.Buffer_idx], state.Program_data[state.Buffer_idx])
+						if err != nil {
+							state.Text_buffer = []rune(err.Error())
+						}
 					}
 				case "q": // quit
 					state.Quit = true
@@ -253,7 +269,25 @@ func process_command_input(state State) (State) {
 						state.Text_buffer = []rune(err.Error())
 					} else {
 						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
-						state.Program_data = program_data_commands
+						if reflect.DeepEqual(state.Program_data, [][][]string{{{"\n"}}}) {
+							state.Program_data = [][][]string{program_data_commands}
+							state.File_names = []string{split_command[1]}
+						} else {
+							state.Program_data = append(state.Program_data, program_data_commands)
+							state.File_names = append(state.File_names, split_command[1])
+							state.Buffer_idx++
+						}
+					}
+				case "bn": // next buffer
+					if state.Buffer_idx < len(state.Program_data) - 1 {
+						state.Buffer_idx++
+					} else {
+						state.Text_buffer = []rune("Reached last buffer")
+					}
+				case "bp": // previous buffer
+					if state.Buffer_idx > 0 {
+						state.Buffer_idx--
+						state.Text_buffer = []rune("Reached first buffer")
 					}
 				default:
 					state.Text_buffer = []rune("Unknown command \"" + split_command[0] + "\"")
