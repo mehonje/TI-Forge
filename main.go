@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"os"
 	"os/exec"
 	"reflect"
@@ -14,7 +15,9 @@ import (
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"golang.org/x/term"
+	"github.com/pkg/browser"
 )
+
 
 type State struct {
 	Quit bool
@@ -288,6 +291,21 @@ func process_command_input(state State) (State) {
 					if state.Buffer_idx > 0 {
 						state.Buffer_idx--
 						state.Text_buffer = []rune("Reached first buffer")
+					}
+				case "help": // help
+					num := rand.IntN(100)
+					if num == 0 {
+						err := browser.OpenURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+						if err != nil {
+							state.Text_buffer = []rune("Failed to open browser: " + err.Error())
+						}
+					}
+
+					err := browser.OpenURL("https://github.com/mehonje/TI-Forge")
+					if err != nil {
+						state.Text_buffer = []rune("Failed to open browser: " + err.Error())
+					} else {
+						state.Text_buffer = []rune("Check your web browser")
 					}
 				default:
 					state.Text_buffer = []rune("Unknown command \"" + split_command[0] + "\"")
