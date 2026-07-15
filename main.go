@@ -107,19 +107,6 @@ func is_highlighted(row int, col int, state State) bool {
 }
 
 func display_data(state State) State {
-	if state.Cursor_row < 0 {
-		state.Cursor_row = 0
-	} else if state.Cursor_row >= len(state.Program_data[state.Buffer_idx]) {
-		state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
-	}
-
-	var line_length int = len(state.Program_data[state.Buffer_idx][state.Cursor_row])
-	if state.Cursor_col < 0 {
-		state.Cursor_col = 0
-	} else if state.Cursor_col >= line_length {
-		state.Cursor_col = line_length - 1
-	}
-
 	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
@@ -226,6 +213,19 @@ func process_input(state State) (State) {
 		case 1: state = process_insert_input(state)
 		case 2: state = process_command_input(state)
 		case 3: state = process_visual_input(state)
+	}
+
+	if state.Cursor_row < 0 {
+		state.Cursor_row = 0
+	} else if state.Cursor_row >= len(state.Program_data[state.Buffer_idx]) {
+		state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
+	}
+
+	var line_length int = len(state.Program_data[state.Buffer_idx][state.Cursor_row])
+	if state.Cursor_col < 0 {
+		state.Cursor_col = 0
+	} else if state.Cursor_col >= line_length {
+		state.Cursor_col = line_length - 1
 	}
 
 	switch {
