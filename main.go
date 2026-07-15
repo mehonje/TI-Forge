@@ -123,31 +123,6 @@ func display_data(state State) State {
 	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
-	var command_matches []string
-	var display_command_matches []string
-	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
-		command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
-		
-		if state.Suggestion_idx >= len(command_matches) {
-			state.Suggestion_idx = max(len(command_matches) - 1, 0)
-		} else if state.Suggestion_idx < 0 {
-			state.Suggestion_idx = 0
-		}
-
-		if len(command_matches) > 0 {
-			var start int = min(state.Suggestion_idx, len(command_matches) - 1)
-			var end int = min(5 + state.Suggestion_idx, len(command_matches))
-			display_command_matches = command_matches[start:end]
-
-			if slices.Equal(state.Input, []byte{13}) { // [enter]
-				state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command_matches[start])
-				state.Input = []byte{}
-				state.Suggestion_idx = 0
-				state.Text_buffer = []rune{}
-			}
-		}
-	}
-
 	_, height := get_term_size()
 	height -= 6
 	half_height := height/2
@@ -203,6 +178,24 @@ func display_data(state State) State {
 			mode_string = "VISUAL"
 	}
 	fmt.Print(mode_string, "   ", prepend_string, string(state.Text_buffer), "\n")
+
+	var display_command_matches []string
+	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
+		var command_matches []string
+		command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+		
+		if state.Suggestion_idx >= len(command_matches) {
+			state.Suggestion_idx = max(len(command_matches) - 1, 0)
+		} else if state.Suggestion_idx < 0 {
+			state.Suggestion_idx = 0
+		}
+
+		if len(command_matches) > 0 {
+			var start int = min(state.Suggestion_idx, len(command_matches) - 1)
+			var end int = min(5 + state.Suggestion_idx, len(command_matches))
+			display_command_matches = command_matches[start:end]
+		}
+	}
 
 	for idx, command := range display_command_matches { // print the first 5 commands from the selected command
 				fmt.Print(command)
@@ -303,6 +296,25 @@ func process_insert_input(state State) (State) {
 		case slices.Equal(state.Input, []byte{27, 91, 90}): // [shift][tab], suggestion up
 			state.Suggestion_idx--
 		case slices.Equal(state.Input, []byte{13}): // [enter]
+			if len(state.Text_buffer) > 0 { // if text buffer has characters
+				var command_matches []string
+				command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+		
+				if state.Suggestion_idx >= len(command_matches) {
+					state.Suggestion_idx = max(len(command_matches) - 1, 0)
+				} else if state.Suggestion_idx < 0 {
+					state.Suggestion_idx = 0
+				}
+
+				if len(command_matches) > 1 {
+					var idx int = min(state.Suggestion_idx, len(command_matches) - 1)
+					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command_matches[idx])
+
+					state.Input = []byte{}
+					state.Suggestion_idx = 0
+					state.Text_buffer = []rune{}
+				}
+			}
 		default:
 			if len(state.Input) == 1 {
 				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
