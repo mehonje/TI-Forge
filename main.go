@@ -30,6 +30,10 @@ type State struct {
 	Program_data [][][]string
 	File_names []string
 	Buffer_idx int
+	Highlight_row int
+	Highlight_col int
+	Highlighting bool
+	Copy_buffer [][]string
 }
 
 func main() {
@@ -46,6 +50,10 @@ func main() {
 		Program_data: [][][]string{{{"\n"}}},
 		File_names: []string{""},
 		Buffer_idx: 0,
+		Highlight_row: 0,
+		Highlight_col: 0,
+		Highlighting: false,
+		Copy_buffer: [][]string{},
 	}
 	
 	fd := int(os.Stdin.Fd())
@@ -61,28 +69,59 @@ func main() {
 		state = process_input(state)
 		
 		if state.Quit {
+			fmt.Print("\033[27m\033[0m") // reset colouring
 			return
 		}
 	}
 }
 
+func is_highlighted(row int, col int, state State) bool {
+	if !state.Highlighting {
+		if row == state.Cursor_row && col == state.Cursor_col {
+			return len(state.Program_data[state.Buffer_idx][row][col]) > 1
+		}
+		return false
+	}
+
+	if row == state.Cursor_row && col == state.Cursor_col {
+		return true
+	}
+	
+	start_row, start_col := state.Cursor_row, state.Cursor_col
+	end_row, end_col := state.Highlight_row, state.Highlight_col
+
+	if start_row > end_row || (start_row == end_row && start_col > end_col) {
+		start_row, end_row = end_row, start_row
+		start_col, end_col = end_col, start_col
+	}
+
+	if row < start_row || (row == start_row && col < start_col) {
+		return false
+	}
+
+	if row > end_row || (row == end_row && col > end_col) {
+		return false
+	}
+
+	return true
+}
+
 func display_data(state State) State {
 	if state.Cursor_row < 0 {
 		state.Cursor_row = 0
-	}
-	if state.Cursor_row >= len(state.Program_data[state.Buffer_idx]) {
+	} else if state.Cursor_row >= len(state.Program_data[state.Buffer_idx]) {
 		state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
 	}
+
+	var line_length int = len(state.Program_data[state.Buffer_idx][state.Cursor_row])
 	if state.Cursor_col < 0 {
 		state.Cursor_col = 0
-	}
-	var line_length int = len(state.Program_data[state.Buffer_idx][state.Cursor_row])
-	if state.Cursor_col >= line_length {
+	} else if state.Cursor_col >= line_length {
 		state.Cursor_col = line_length - 1
 	}
 
 	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
-	line_num_fmtstr := fmt.Sprintf("%%%ds %%s", max_line_num_len)
+	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
 	var command_matches []string
 	var display_command_matches []string
@@ -117,13 +156,22 @@ func display_data(state State) State {
 	var buffer_end int = min(buffer_row+half_height, len(state.Program_data[state.Buffer_idx]))
 
 	var builder strings.Builder
-
+	
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
-		for _, command := range state.Program_data[state.Buffer_idx][i] {
+		for j, command := range state.Program_data[state.Buffer_idx][i] {
+			if is_highlighted(i, j, state) {
+				line_builder.WriteString("\033[7m")
+			} else {
+				line_builder.WriteString("\033[0m")
+			}
+
 			line_builder.WriteString(command)
 		}
-		fmt.Fprintf(&builder, line_num_fmtstr, strconv.Itoa(i+1),line_builder.String())
+		line_builder.WriteString("\033[0m")
+		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
+		builder.WriteString(line_builder.String()) // line
+		line_builder.WriteString("\033[0m")
 	}
 
 	var screen_row int = buffer_row-buffer_start
@@ -135,6 +183,8 @@ func display_data(state State) State {
 	fmt.Print("\033[H\033[2J") // clear screen
 	fmt.Print(builder.String()) // print program slice
 
+	fmt.Print("\033[0m") // reset colouring
+	
 	fmt.Println(state.File_names[state.Buffer_idx])
 
 	var mode_string string = ""
@@ -142,14 +192,18 @@ func display_data(state State) State {
 	switch state.Mode {
 		case 0:
 			mode_string = "NORMAL"
+			fmt.Print("\033[2 q") // make cursor steady block
 		case 1:
 			mode_string = "INSERT"
+			fmt.Print("\033[6 q") // make cursor steady bar
 		case 2:
 			mode_string = "COMMAND"
 			prepend_string = ":"
+		case 3:
+			mode_string = "VISUAL"
 	}
 	fmt.Print(mode_string, "   ", prepend_string, string(state.Text_buffer), "\n")
-	
+
 	for idx, command := range display_command_matches { // print the first 5 commands from the selected command
 				fmt.Print(command)
 				if idx <= 3 {
@@ -178,12 +232,14 @@ func process_input(state State) (State) {
 		case 0: state = process_normal_input(state)
 		case 1: state = process_insert_input(state)
 		case 2: state = process_command_input(state)
+		case 3: state = process_visual_input(state)
 	}
 
 	switch {
 		case slices.Equal(state.Input, []byte{27}): // [esc]
 			state.Mode = 0
 			state.Text_buffer = []rune{}
+			state.Highlighting = false
 	}
 
 	return state
@@ -209,6 +265,26 @@ func process_normal_input(state State) (State) {
 				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
 				if len(state.Program_data) == 0 {
 					state.Program_data = [][][]string{{{""}}}
+				}
+			}
+		case slices.Equal(state.Input, []byte{118}): // [v], enter visual mode
+			state.Mode = 3
+			state.Highlighting = true
+			state.Highlight_row = state.Cursor_row
+			state.Highlight_col = state.Cursor_col
+		case slices.Equal(state.Input, []byte{112}): // [p], put
+			if len(state.Copy_buffer) == 1 {
+				slices.Reverse(state.Copy_buffer[0])
+				for _, command := range state.Copy_buffer[0] {
+					if command == "\n" {
+						continue
+					}
+					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command)
+				}
+			} else {
+				slices.Reverse(state.Copy_buffer)
+				for _, line := range state.Copy_buffer {
+					state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row, line)
 				}
 			}
 	}
@@ -314,6 +390,50 @@ func process_command_input(state State) (State) {
 			if len(state.Input) == 1 {
 				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
 			}
+	}
+
+	return state
+}
+
+func process_visual_input(state State) (State) {
+	switch {
+		case slices.Equal(state.Input, []byte{104}): // [h], left
+			state.Cursor_col--
+		case slices.Equal(state.Input, []byte{108}): // [l], right
+			state.Cursor_col++
+		case slices.Equal(state.Input, []byte{106}): // [j], down
+			state.Cursor_row++
+		case slices.Equal(state.Input, []byte{107}): // [k], up
+			state.Cursor_row--
+		case slices.Equal(state.Input, []byte{121}): // [y], yank
+			start_row, start_col := state.Cursor_row, state.Cursor_col
+			end_row, end_col := state.Highlight_row, state.Highlight_col
+	
+			if start_row > end_row || (start_row == end_row && start_col > end_col) {
+				start_row, end_row = end_row, start_row
+				start_col, end_col = end_col, start_col
+			}
+
+			state.Copy_buffer = [][]string{}
+
+			if start_row == end_row {
+				state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][start_row][start_col:end_col + 1]))
+			} else {
+				state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][start_row]))
+				state.Copy_buffer[0] = state.Copy_buffer[0][start_col:]
+		
+				if start_row != end_row {
+					for row := start_row + 1; row < end_row; row++ {
+						state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][row]))
+					}
+
+					state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][end_row]))
+					state.Copy_buffer[len(state.Copy_buffer) - 1] = state.Copy_buffer[len(state.Copy_buffer) - 1][:end_col + 1]
+				}
+			}
+
+			state.Mode = 0
+			state.Highlighting = false
 	}
 
 	return state
