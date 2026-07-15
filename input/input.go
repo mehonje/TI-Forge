@@ -111,18 +111,25 @@ func Process_insert_input(state state.State) state.State {
 			}
 		case slices.Equal(state.Input, []byte{9}): // [tab], suggestion down
 			state.Suggestion_idx++
+
+			var command_matches []string
+			command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+		
+			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
+
 		case slices.Equal(state.Input, []byte{27, 91, 90}): // [shift][tab], suggestion up
 			state.Suggestion_idx--
+
+			var command_matches []string
+			command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+		
+			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 		case slices.Equal(state.Input, []byte{13}): // [enter]
 			if len(state.Text_buffer) > 0 { // if text buffer has characters
 				var command_matches []string
 				command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
 		
-				if state.Suggestion_idx >= len(command_matches) {
-					state.Suggestion_idx = max(len(command_matches) - 1, 0)
-				} else if state.Suggestion_idx < 0 {
-					state.Suggestion_idx = 0
-				}
+				state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 
 				if len(command_matches) > 1 {
 					var idx int = min(state.Suggestion_idx, len(command_matches) - 1)
@@ -140,6 +147,16 @@ func Process_insert_input(state state.State) state.State {
 	}
 
 	return state
+}
+
+func bound_suggestion_idx(idx int, suggestions int) int {
+	if idx >= suggestions {
+		idx = max(suggestions - 1, 0)
+	} else if idx < 0 {
+		idx = 0
+	}
+
+	return idx
 }
 
 func Process_command_input(state state.State) state.State {

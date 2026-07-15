@@ -12,8 +12,8 @@ import (
 	"ti_forge/state"
 	"unicode/utf8"
 
-	"github.com/lithammer/fuzzysearch/fuzzy"
 	"golang.org/x/term"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func main() {
@@ -151,12 +151,6 @@ func display_data(state state.State) state.State {
 		var command_matches []string
 		command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
 		
-		if state.Suggestion_idx >= len(command_matches) {
-			state.Suggestion_idx = max(len(command_matches) - 1, 0)
-		} else if state.Suggestion_idx < 0 {
-			state.Suggestion_idx = 0
-		}
-
 		if len(command_matches) > 0 {
 			var start int = min(state.Suggestion_idx, len(command_matches) - 1)
 			var end int = min(5 + state.Suggestion_idx, len(command_matches))
