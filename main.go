@@ -16,6 +16,7 @@ import (
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"golang.org/x/term"
 	"github.com/pkg/browser"
+	"github.com/atotto/clipboard"
 )
 
 
@@ -421,34 +422,61 @@ func process_visual_input(state State) (State) {
 			start_row, start_col := state.Cursor_row, state.Cursor_col
 			end_row, end_col := state.Highlight_row, state.Highlight_col
 	
-			if start_row > end_row || (start_row == end_row && start_col > end_col) {
-				start_row, end_row = end_row, start_row
-				start_col, end_col = end_col, start_col
-			}
+			state.Copy_buffer = copy_selection(start_row, start_col, end_row, end_col, state.Program_data[state.Buffer_idx])
 
-			state.Copy_buffer = [][]string{}
+			state.Mode = 0
+			state.Highlighting = false
+		case slices.Equal(state.Input, []byte{89}): // [Y], yank to clipboard
+			start_row, start_col := state.Cursor_row, state.Cursor_col
+			end_row, end_col := state.Highlight_row, state.Highlight_col
+	
+			var buffer [][]string = copy_selection(start_row, start_col, end_row, end_col, state.Program_data[state.Buffer_idx])
 
-			if start_row == end_row {
-				state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][start_row][start_col:end_col + 1]))
-			} else {
-				state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][start_row]))
-				state.Copy_buffer[0] = state.Copy_buffer[0][start_col:]
-		
-				if start_row != end_row {
-					for row := start_row + 1; row < end_row; row++ {
-						state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][row]))
-					}
+			var builder strings.Builder
 
-					state.Copy_buffer = append(state.Copy_buffer, slices.Clone(state.Program_data[state.Buffer_idx][end_row]))
-					state.Copy_buffer[len(state.Copy_buffer) - 1] = state.Copy_buffer[len(state.Copy_buffer) - 1][:end_col + 1]
+			for _, line := range buffer {
+				for _, command := range line {
+					builder.WriteString(command)
 				}
 			}
+			
+			err := clipboard.WriteAll(builder.String())
+				if err != nil {
+					state.Text_buffer = []rune("Failed to set clipboard : " + err.Error())
+				}
 
 			state.Mode = 0
 			state.Highlighting = false
 	}
 
 	return state
+}
+
+func copy_selection(start_row int, start_col int, end_row int, end_col int, program_data [][]string) [][]string {
+	if start_row > end_row || (start_row == end_row && start_col > end_col) {
+		start_row, end_row = end_row, start_row
+		start_col, end_col = end_col, start_col
+	}
+
+	var buffer = [][]string{}
+	
+	if start_row == end_row {
+		buffer = append(buffer, slices.Clone(program_data[start_row][start_col:end_col + 1]))
+	} else {
+		buffer = append(buffer, slices.Clone(program_data[start_row]))
+		buffer[0] = buffer[0][start_col:]
+
+		if start_row != end_row {
+			for row := start_row + 1; row < end_row; row++ {
+				buffer = append(buffer, slices.Clone(program_data[row]))
+			}
+
+			buffer = append(buffer, slices.Clone(program_data[end_row]))
+			buffer[len(buffer) - 1] = buffer[len(buffer) - 1][:end_col + 1]
+		}
+	}
+
+	return buffer
 }
 
 func get_term_size() (int, int) {
