@@ -45,6 +45,7 @@ func main() {
 		state = input.Process_input(state)
 		
 		if state.Quit {
+			fmt.Print("\033[2J\033[H") // clear screen
 			fmt.Print("\033[27m\033[0m") // reset colouring
 			return
 		}

@@ -26,6 +26,7 @@ func Display_data(state state.State) state.State {
 	var buffer_end int = min(buffer_row+half_height, len(state.Program_data[state.Buffer_idx]))
 
 	var builder strings.Builder
+	builder.WriteString("\033[H\033[2J") // clear screen
 	
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
@@ -50,29 +51,31 @@ func Display_data(state state.State) state.State {
     screen_col += utf8.RuneCountInString(state.Program_data[state.Buffer_idx][state.Cursor_row][i])
 	}
 
-	fmt.Print("\033[H\033[2J") // clear screen
-	fmt.Print(builder.String()) // print program slice
-
-	fmt.Print("\033[0m") // reset colouring
+	builder.WriteString("\033[0m") // reset colouring
 	
-	fmt.Println(state.File_names[state.Buffer_idx])
+	builder.WriteString(state.File_names[state.Buffer_idx])
+	builder.WriteByte('\n')
 
 	var mode_string string = ""
 	var prepend_string string = ""
 	switch state.Mode {
 		case 0:
 			mode_string = "NORMAL"
-			fmt.Print("\033[2 q") // make cursor steady block
+			builder.WriteString("\033[2 q") // make cursor steady block
 		case 1:
 			mode_string = "INSERT"
-			fmt.Print("\033[6 q") // make cursor steady bar
+			builder.WriteString("\033[6 q") // make cursor steady bar
 		case 2:
 			mode_string = "COMMAND"
 			prepend_string = ":"
 		case 3:
 			mode_string = "VISUAL"
 	}
-	fmt.Print(mode_string, "   ", prepend_string, string(state.Text_buffer), "\n")
+	builder.WriteString(mode_string)
+	builder.WriteString("   ")
+	builder.WriteString(prepend_string)
+	builder.WriteString(string(state.Text_buffer))
+	builder.WriteByte('\n')
 
 	var display_command_matches []string
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
@@ -87,14 +90,17 @@ func Display_data(state state.State) state.State {
 	}
 
 	for idx, command := range display_command_matches { // print the first 5 commands from the selected command
-				fmt.Print(command)
+				builder.WriteString(command)
 				if idx <= 3 {
-					fmt.Print("\n")
+					builder.WriteByte('\n')
 				}
 	}
 
-	fmt.Printf("\033[%d;%dH", screen_row + 1, screen_col) // move cursor
+	fmt.Fprintf(&builder, "\033[%d;%dH", screen_row + 1, screen_col) // move cursor
+
+	os.Stdout.WriteString(builder.String())
 	
+
 	return state
 }
 
