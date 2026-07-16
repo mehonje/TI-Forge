@@ -114,6 +114,14 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 				} else {
 					line = append(line, string(curr_byte)) // Turn into string if no
 				}
+			case 0xaa:
+					s, ok := tokens.Tokens_aa[next_byte] // Check if mapping exists
+				if ok {
+					line = append(line, s) // Replace if yes
+					step = 2
+				} else {
+					line = append(line, string(curr_byte)) // Turn into string if no
+				}
 			default:
 				s, ok := tokens.Tokens[curr_byte] // Check if normal mapping exists
 				if ok {
