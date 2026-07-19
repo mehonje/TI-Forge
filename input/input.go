@@ -144,7 +144,7 @@ func Process_insert_input(state state.State) state.State {
 		
 				state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 
-				if len(command_matches) > 1 {
+				if len(command_matches) >= 1 {
 					var idx int = min(state.Suggestion_idx, len(command_matches) - 1)
 					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command_matches[idx])
 
