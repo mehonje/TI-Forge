@@ -109,6 +109,9 @@ func Process_normal_input(state state.State) state.State {
 			if len(state.Program_data[state.Buffer_idx]) > 1 {
 				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
 			}
+		case "gg": // go to top
+			state.Cursor_row = 0
+			state.Cursor_col = 0
 		default:
 			state.Text_buffer = old_text_buffer
 	}
