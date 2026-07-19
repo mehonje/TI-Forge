@@ -57,20 +57,27 @@ func Process_input(state state.State) state.State {
 }
 
 func Process_normal_input(state state.State) state.State {
-	switch {
-		case slices.Equal(state.Input, []byte{104}): // [h], left
+	if len(state.Input) == 1 {
+		state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
+	}
+	
+	var old_text_buffer []rune = slices.Clone(state.Text_buffer) // set text buffer to empty, reset to current state if no match found
+	state.Text_buffer = []rune{}
+
+	switch string(old_text_buffer) {
+		case "h": // [h], move cursor left
 			state.Cursor_col--
-		case slices.Equal(state.Input, []byte{108}): // [l], right
+		case "l": // [l], right
 			state.Cursor_col++
-		case slices.Equal(state.Input, []byte{106}): // [j], down
+		case "j": // [j], down
 			state.Cursor_row++
-		case slices.Equal(state.Input, []byte{107}): // [k], up
+		case "k": // [k], up
 			state.Cursor_row--
-		case slices.Equal(state.Input, []byte{105}): // [i], enter insert mode
+		case "i": // [i], enter insert mode
 			state.Mode = 1
-		case slices.Equal(state.Input, []byte{58}): // [:], enter command mode
+		case ":": // [:], enter command mode
 			state.Mode = 2
-		case slices.Equal(state.Input, []byte{120}): // [x], delete command at cursor
+		case "x": // [x], delete command at cursor
 			state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Delete(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
 			if slices.Equal(state.Program_data[state.Buffer_idx][state.Cursor_row], []string{}) {
 				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
@@ -78,12 +85,12 @@ func Process_normal_input(state state.State) state.State {
 					state.Program_data = [][][]string{{{""}}}
 				}
 			}
-		case slices.Equal(state.Input, []byte{118}): // [v], enter visual mode
+		case "v": // [v], enter visual mode
 			state.Mode = 3
 			state.Highlighting = true
 			state.Highlight_row = state.Cursor_row
 			state.Highlight_col = state.Cursor_col
-		case slices.Equal(state.Input, []byte{112}): // [p], put
+		case "p": // [p], put
 			if len(state.Copy_buffer) == 1 {
 				slices.Reverse(state.Copy_buffer[0])
 				for _, command := range state.Copy_buffer[0] {
@@ -98,18 +105,12 @@ func Process_normal_input(state state.State) state.State {
 					state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row, line)
 				}
 			}
-	default:
-		if len(state.Input) == 1 {
-			state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
-		}
-	}
-	
-	switch string(state.Text_buffer) {
 		case "dd": // delete line
 			if len(state.Program_data[state.Buffer_idx]) > 1 {
 				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
 			}
-			state.Text_buffer = []rune{}
+		default:
+			state.Text_buffer = old_text_buffer
 	}
 
 	return state
