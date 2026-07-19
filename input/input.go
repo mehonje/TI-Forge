@@ -98,6 +98,18 @@ func Process_normal_input(state state.State) state.State {
 					state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row, line)
 				}
 			}
+	default:
+		if len(state.Input) == 1 {
+			state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
+		}
+	}
+	
+	switch string(state.Text_buffer) {
+		case "dd": // delete line
+			if len(state.Program_data[state.Buffer_idx]) > 1 {
+				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
+			}
+			state.Text_buffer = []rune{}
 	}
 
 	return state
