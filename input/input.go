@@ -73,7 +73,10 @@ func Process_normal_input(state state.State) state.State {
 			state.Cursor_row++
 		case "k": // [k], up
 			state.Cursor_row--
-		case "i": // [i], enter insert mode
+		case "i": // [i], insert, enter insert mode
+			state.Mode = 1
+		case "a": // [a], append, enter insert mode after current command
+			state.Cursor_col++
 			state.Mode = 1
 		case ":": // [:], enter command mode
 			state.Mode = 2
