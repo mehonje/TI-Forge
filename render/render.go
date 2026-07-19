@@ -45,7 +45,6 @@ func Display_data(state state.State) state.State {
 		line_builder.WriteString("\033[0m")
 	}
 
-	var screen_row int = buffer_row-buffer_start
 	var screen_col int = max_line_num_len+2
 	for i := 0; i < state.Cursor_col; i++ {
     screen_col += utf8.RuneCountInString(state.Program_data[state.Buffer_idx][state.Cursor_row][i])
@@ -61,10 +60,8 @@ func Display_data(state state.State) state.State {
 	switch state.Mode {
 		case 0:
 			mode_string = "NORMAL"
-			builder.WriteString("\033[2 q") // make cursor steady block
 		case 1:
 			mode_string = "INSERT"
-			builder.WriteString("\033[6 q") // make cursor steady bar
 		case 2:
 			mode_string = "COMMAND"
 			prepend_string = ":"
@@ -74,7 +71,15 @@ func Display_data(state state.State) state.State {
 	builder.WriteString(mode_string)
 	builder.WriteString("   ")
 	builder.WriteString(prepend_string)
-	builder.WriteString(string(state.Text_buffer))
+	
+	if len(state.Text_buffer) > 0 {
+			builder.WriteString(string(state.Text_buffer))
+	}
+
+	if state.Mode == 1 || state.Mode == 2 {
+		builder.WriteString("\033[7m \033[0m")
+	}
+
 	builder.WriteByte('\n')
 
 	var display_command_matches []string
@@ -90,13 +95,20 @@ func Display_data(state state.State) state.State {
 	}
 
 	for idx, command := range display_command_matches { // print the first 5 commands from the selected command
-				builder.WriteString(command)
-				if idx <= 3 {
-					builder.WriteByte('\n')
-				}
-	}
+		if idx == 0 {
+			builder.WriteString("\033[7m")
+		}
 
-	fmt.Fprintf(&builder, "\033[%d;%dH", screen_row + 1, screen_col) // move cursor
+		builder.WriteString(command)
+
+		if idx == 0 {
+			builder.WriteString("\033[0m")
+		}
+
+		if idx <= 3 {
+			builder.WriteByte('\n')
+		}
+	}
 
 	os.Stdout.WriteString(builder.String())
 	
@@ -107,7 +119,7 @@ func Display_data(state state.State) state.State {
 func is_highlighted(row int, col int, state state.State) bool {
 	if !state.Highlighting {
 		if row == state.Cursor_row && col == state.Cursor_col {
-			return len(state.Program_data[state.Buffer_idx][row][col]) > 1
+			return true
 		}
 		return false
 	}

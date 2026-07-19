@@ -38,6 +38,7 @@ func main() {
 		log.Fatal("Failed to enter raw mode: ", err)
 	}
 	defer term.Restore(fd, cooked_state)
+	fmt.Print("\033[?25l") // hide cursor
 
 	for {
 		state = render.Display_data(state)
@@ -47,6 +48,7 @@ func main() {
 		if state.Quit {
 			fmt.Print("\033[2J\033[H") // clear screen
 			fmt.Print("\033[27m\033[0m") // reset colouring
+			fmt.Print("\033[?25l") // show cursor
 			return
 		}
 	}
