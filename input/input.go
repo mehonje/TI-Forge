@@ -118,6 +118,9 @@ func Process_normal_input(state state.State) state.State {
 		case "G": // go to bottom
 			state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
 			state.Cursor_col = 0
+		case "I": // go to beginning of line
+			state.Cursor_col = 0
+			state.Mode = 1
 		default:
 			state.Text_buffer = old_text_buffer
 	}
