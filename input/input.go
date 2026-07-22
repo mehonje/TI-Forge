@@ -81,11 +81,13 @@ func Process_normal_input(state state.State) state.State {
 		case ":": // [:], enter command mode
 			state.Mode = 2
 		case "x": // [x], delete command at cursor
-			state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Delete(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
-			if slices.Equal(state.Program_data[state.Buffer_idx][state.Cursor_row], []string{}) {
-				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
-				if len(state.Program_data) == 0 {
-					state.Program_data = [][][]string{{{""}}}
+			if state.Program_data[state.Buffer_idx][state.Cursor_row][state.Cursor_col] != "　" {
+				state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Delete(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
+				if slices.Equal(state.Program_data[state.Buffer_idx][state.Cursor_row], []string{}) {
+					state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
+					if len(state.Program_data) == 0 {
+						state.Program_data = [][][]string{{{""}}}
+					}
 				}
 			}
 		case "v": // [v], enter visual mode

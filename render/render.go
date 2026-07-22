@@ -43,6 +43,7 @@ func Display_data(state state.State) state.State {
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString("\033[0m")
+		builder.WriteByte('\n')
 	}
 
 	var screen_col int = max_line_num_len+2

@@ -49,7 +49,7 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 		}
 		lines[0] = append(lines[0], string(char))
 	}
-	lines[0] = append(lines[0], "\n")
+
 	lines = append(lines, []string{})
 	for _, char := range program_metadata[1] {
 		if char == rune(0x00) {
@@ -57,9 +57,11 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 		}
 		lines[1] = append(lines[1], string(char))
 	}
-	lines[1] = append(lines[1], "\n")
-	lines = append(lines, []string{program_metadata[2], "\n"})
-	lines = append(lines, []string{program_metadata[3], "\n"})
+
+	lines = append(lines, []string{program_metadata[2]})
+
+	lines = append(lines, []string{program_metadata[3]})
+	
 
 	var i int
 	var program_data_len int = len(program_data)
@@ -123,35 +125,40 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 					line = append(line, string(curr_byte)) // Turn into string if no
 				}
 			default:
-				s, ok := tokens.Tokens[curr_byte] // Check if normal mapping exists
+				s, ok := tokens.Tokens[curr_byte]
 				if ok {
-					line = append(line, s) // Replace if yes,
 					if s == "\n" {
 						lines = append(lines, line)
 						line = []string{}
+					} else {
+						line = append(line, s)
 					}
 				} else {
-					line = append(line, string(curr_byte)) // Turn into string if no
+					line = append(line, string(curr_byte))
 				}
 			}
 		} else {
-			s, ok := tokens.Tokens[curr_byte] // Check if normal mapping exists
+			s, ok := tokens.Tokens[curr_byte]
 			if ok {
-				line = append(line, s) // Replace if yes,
 				if s == "\n" {
 					lines = append(lines, line)
 					line = []string{}
+				} else {
+					line = append(line, s)
 				}
 			} else {
-				line = append(line, string(curr_byte)) // Turn into string if no
+				line = append(line, string(curr_byte))
 			}
 		}
 		i += step
 	}
 
 	if len(line) > 0 {
-		line = append(line, "\n")
 		lines = append(lines, line)
+	}
+
+	for i := 0; i < len(lines); i++ {
+		lines[i] = append(lines[i], "　")
 	}
 	
 	return lines
@@ -231,11 +238,13 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 	var program_lines_no_meta [][]string = program_lines[4:]
 	var program_commands []string = []string{}
 	for _, line := range program_lines_no_meta {
-		var tmp_array []string = []string{}
 		for _, command := range line {
-			tmp_array = append(tmp_array, command)
+			if command == "　" {
+				program_commands = append(program_commands, "\n")
+				continue
+			}
+			program_commands = append(program_commands, command)
 		}
-		program_commands = append(program_commands, tmp_array...)
 	}
 
 	var body_length uint16 = 2
@@ -312,6 +321,6 @@ func init() {
 	for _, val := range tokens.Tokens_7e {
 		Commands = append(Commands, val)
 	}
-	
+
 	slices.Sort(Commands)
 }
