@@ -27,9 +27,13 @@ func Display_data(state state.State) state.State {
 
 	var builder strings.Builder
 	builder.WriteString("\033[H\033[2J") // clear screen
+
+	var indentation_str string = ""
 	
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
+		var indentation_change int = 0
+
 		for j, command := range state.Program_data[state.Buffer_idx][i] {
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString("\033[7m")
@@ -38,12 +42,32 @@ func Display_data(state state.State) state.State {
 			}
 
 			line_builder.WriteString(command)
+
+			if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
+				indentation_change++
+			} else if command == "End" {
+				if len(indentation_str) > 0 {
+					indentation_str = indentation_str[:len(indentation_str) - 1] 
+				}
+			} else if command == "Else" {
+				if len(indentation_str) > 0 {
+					indentation_str = indentation_str[:len(indentation_str) - 1] 
+				}
+				indentation_change++
+			}
 		}
+
 		line_builder.WriteString("\033[0m")
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
+		builder.WriteString(indentation_str)
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString("\033[0m")
 		builder.WriteByte('\n')
+
+		for indentation_change > 0 {
+			indentation_str = indentation_str + "	"
+			indentation_change--
+		}
 	}
 
 	var screen_col int = max_line_num_len+2
