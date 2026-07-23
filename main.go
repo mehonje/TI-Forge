@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"ti_forge/ansi"
 	"ti_forge/input"
 	"ti_forge/render"
 	"ti_forge/state"
@@ -38,7 +39,7 @@ func main() {
 		log.Fatal("Failed to enter raw mode: ", err)
 	}
 	defer term.Restore(fd, cooked_state)
-	fmt.Print("\033[?25l") // hide cursor
+	fmt.Print(ansi.Hide_cursor)
 
 	for {
 		state = render.Display_data(state)
@@ -46,9 +47,10 @@ func main() {
 		state = input.Process_input(state)
 		
 		if state.Quit {
-			fmt.Print("\033[2J\033[H") // clear screen
-			fmt.Print("\033[27m\033[0m") // reset colouring
-			fmt.Print("\033[?25l") // show cursor
+			fmt.Print(ansi.Clear)
+			fmt.Print(ansi.Reset_cursor)
+			fmt.Print(ansi.Dehighlight)
+			fmt.Print(ansi.Show_cursor)
 			return
 		}
 	}

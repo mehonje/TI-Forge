@@ -6,6 +6,7 @@ import(
 	"os"
 	"strconv"
 	"strings"
+	"ti_forge/ansi"
 	"ti_forge/convert"
 	"ti_forge/state"
 	"unicode/utf8"
@@ -26,7 +27,9 @@ func Display_data(state state.State) state.State {
 	var buffer_end int = min(buffer_row+half_height, len(state.Program_data[state.Buffer_idx]))
 
 	var builder strings.Builder
-	builder.WriteString("\033[H\033[2J") // clear screen
+
+	builder.WriteString(ansi.Clear)
+	builder.WriteString(ansi.Reset_cursor)
 
 	var indentation_str string = ""
 	
@@ -36,9 +39,9 @@ func Display_data(state state.State) state.State {
 
 		for j, command := range state.Program_data[state.Buffer_idx][i] {
 			if is_highlighted(i, j, state) {
-				line_builder.WriteString("\033[7m")
+				line_builder.WriteString(ansi.Highlight)
 			} else {
-				line_builder.WriteString("\033[0m")
+				line_builder.WriteString(ansi.Dehighlight)
 			}
 
 			line_builder.WriteString(command)
@@ -57,11 +60,11 @@ func Display_data(state state.State) state.State {
 			}
 		}
 
-		line_builder.WriteString("\033[0m")
+		line_builder.WriteString(ansi.Dehighlight)
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
 		builder.WriteString(indentation_str)
 		builder.WriteString(line_builder.String()) // line
-		line_builder.WriteString("\033[0m")
+		line_builder.WriteString(ansi.Dehighlight)
 		builder.WriteByte('\n')
 
 		for indentation_change > 0 {
@@ -75,7 +78,7 @@ func Display_data(state state.State) state.State {
     screen_col += utf8.RuneCountInString(state.Program_data[state.Buffer_idx][state.Cursor_row][i])
 	}
 
-	builder.WriteString("\033[0m") // reset colouring
+	builder.WriteString(ansi.Dehighlight)
 	
 	builder.WriteString(state.File_names[state.Buffer_idx])
 	builder.WriteByte('\n')
@@ -102,7 +105,9 @@ func Display_data(state state.State) state.State {
 	}
 
 	if state.Mode == 1 || state.Mode == 2 {
-		builder.WriteString("\033[7m \033[0m")
+		builder.WriteString(ansi.Highlight)
+		builder.WriteString(" ")
+		builder.WriteString(ansi.Dehighlight)
 	}
 
 	builder.WriteByte('\n')
@@ -121,13 +126,13 @@ func Display_data(state state.State) state.State {
 
 	for idx, command := range display_command_matches { // print the first 5 commands from the selected command
 		if idx == 0 {
-			builder.WriteString("\033[7m")
+			builder.WriteString(ansi.Highlight)
 		}
 
 		builder.WriteString(command)
 
 		if idx == 0 {
-			builder.WriteString("\033[0m")
+			builder.WriteString(ansi.Dehighlight)
 		}
 
 		if idx <= 3 {
