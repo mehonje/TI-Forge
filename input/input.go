@@ -6,6 +6,7 @@ import(
 	"reflect"
 	"slices"
 	"strings"
+	"ti_forge/ansi"
 	"ti_forge/convert"
 	"ti_forge/state"
 
@@ -206,12 +207,12 @@ func Process_command_input(state state.State) state.State {
 					if len(split_command) > 1 {
 						err := convert.Txt_to_eightxp(split_command[1], state.Program_data[state.Buffer_idx])
 						if err != nil {
-							state.Text_buffer = []rune(err.Error())
+							state.Text_buffer = []rune(create_error_string(err, "", ""))
 						}
 					} else {
 						err := convert.Txt_to_eightxp(state.File_names[state.Buffer_idx], state.Program_data[state.Buffer_idx])
 						if err != nil {
-							state.Text_buffer = []rune(err.Error())
+							state.Text_buffer = []rune(create_error_string(err, "", ""))
 						}
 					}
 				case "q": // quit
@@ -222,7 +223,7 @@ func Process_command_input(state state.State) state.State {
 					program_data, program_metadata, err := convert.Read8xp(split_command[1])
 
 					if err != nil {
-						state.Text_buffer = []rune(err.Error())
+						state.Text_buffer = []rune(create_error_string(err, "", ""))
 					} else {
 						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
 						if reflect.DeepEqual(state.Program_data, [][][]string{{{"\n"}}}) {
@@ -250,13 +251,13 @@ func Process_command_input(state state.State) state.State {
 					if num == 0 {
 						err := browser.OpenURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 						if err != nil {
-							state.Text_buffer = []rune("Failed to open browser: " + err.Error())
+							state.Text_buffer = []rune(create_error_string(err, "Failed to open browser: ", ""))
 						}
 					}
 
 					err := browser.OpenURL("https://github.com/mehonje/TI-Forge")
 					if err != nil {
-						state.Text_buffer = []rune("Failed to open browser: " + err.Error())
+						state.Text_buffer = []rune(create_error_string(err, "Failed to open browser: ", ""))
 					} else {
 						state.Text_buffer = []rune("Check your web browser")
 					}
@@ -306,7 +307,7 @@ func Process_visual_input(state state.State) state.State {
 			
 			err := clipboard.WriteAll(builder.String())
 				if err != nil {
-					state.Text_buffer = []rune("Failed to set clipboard : " + err.Error())
+					state.Text_buffer = []rune(create_error_string(err, "Failed to set clipboard : ", ""))
 				}
 
 			state.Mode = 0
@@ -343,3 +344,6 @@ func Copy_selection(start_row int, start_col int, end_row int, end_col int, prog
 	return buffer
 }
 
+func create_error_string(err error, prefix string, suffix string) string {
+	return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Dehighlight
+}
