@@ -127,6 +127,10 @@ func Process_normal_input(state state.State) state.State {
 		case "A": // go to beginning of line
 			state.Cursor_col = len(state.Program_data[state.Buffer_idx][state.Cursor_row]) - 1
 			state.Mode = 1
+		case "o": // [o], newline below cursor
+			state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row + 1, []string{"　"})
+			state.Cursor_row++
+			state.Mode = 1
 		default:
 			state.Text_buffer = old_text_buffer
 	}
