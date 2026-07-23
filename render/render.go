@@ -45,7 +45,7 @@ func Display_data(state state.State) state.State {
 		var indent_change int = 0
 
 		for j, command := range state.Program_data[state.Buffer_idx][i] {
-			tracking_block, block_indent = process_block_highlight(command, tracking_block, block_indent, i, j, state.Cursor_row, state.Cursor_col)
+			tracking_block, block_indent, indent_str, indent_change = process_block_highlight(command, tracking_block, block_indent, i, j, state.Cursor_row, state.Cursor_col, indent_str, indent_change, state.Options["indent_size"])
 
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
@@ -60,8 +60,6 @@ func Display_data(state state.State) state.State {
 			}
 
 			line_builder.WriteString(command)
-
-			indent_str, indent_change = process_block_indent(command, indent_str, indent_change, state.Options["indent_size"])
 		}
 
 		line_builder.WriteString(ansi.Reset_text)
@@ -150,15 +148,21 @@ func Display_data(state state.State) state.State {
 	return state
 }
 
-func process_block_highlight(command string, tracking_block bool, block_indent int, row int, col int, cursor_row int, cursor_col int) (bool, int) {
+func process_block_highlight(command string, tracking_block bool, block_indent int, row int, col int, cursor_row int, cursor_col int, indent_str string, indent_change int, indent_size int) (bool, int, string, int) {
 	if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
 		if row == cursor_row && col == cursor_col {
 			tracking_block = true
 			block_indent = 0
 		}
 		block_indent++
+
+		indent_change++
 	} else if command == "End" {
 		block_indent--
+
+		if len(indent_str) > 0 {
+			indent_str = indent_str[:len(indent_str) - indent_size] 
+		}
 	} else if command == "Else" {
 		if tracking_block {
 			block_indent--
@@ -168,26 +172,15 @@ func process_block_highlight(command string, tracking_block bool, block_indent i
 				block_indent = 1
 			}
 		}
-	}
 
-	return tracking_block, block_indent
-}
-
-func process_block_indent(command string, indent_str string, indent_change int, indent_size int) (string, int) {
-	if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
-		indent_change++
-	} else if command == "End" {
-		if len(indent_str) > 0 {
-			indent_str = indent_str[:len(indent_str) - indent_size] 
-		}
-	} else if command == "Else" {
 		if len(indent_str) > 0 {
 			indent_str = indent_str[:len(indent_str) - indent_size] 
 		}
 		indent_change++
+
 	}
 
-	return indent_str, indent_change
+	return tracking_block, block_indent, indent_str, indent_change
 }
 
 func is_highlighted(row int, col int, state state.State) bool {
