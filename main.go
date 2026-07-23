@@ -24,7 +24,7 @@ func main() {
 		Text_buffer: []rune{},
 		Suggestion_idx: 0,
 		Input: []byte{},
-		Program_data: [][][]string{{{"\n"}}},
+		Program_data: [][][]string{{{"　"}}},
 		File_names: []string{""},
 		Buffer_idx: 0,
 		Highlight_row: 0,
