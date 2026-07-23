@@ -36,14 +36,40 @@ func Display_data(state state.State) state.State {
 		indentation_size = indentation_size + " "
 	}
 	var indentation_str string = ""
-	
+
+	var tracking_block bool = false
+	var block_indent int = 0
+
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
 		var indentation_change int = 0
 
 		for j, command := range state.Program_data[state.Buffer_idx][i] {
-			if is_highlighted(i, j, state) {
+			if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
+				if i == state.Cursor_row && j == state.Cursor_col {
+				tracking_block = true
+				block_indent = 0
+				}
+				block_indent++
+			} else if command == "End" {
+				block_indent--
+			} else if command == "Else" {
+				if tracking_block {
+					block_indent--
+				} else {
+					if i == state.Cursor_row && j == state.Cursor_col {
+					tracking_block = true
+						block_indent = 1
+					}
+				}
+			}
+
+			if is_highlighted(i, j, state) || (block_indent <= 0 && tracking_block) {
 				line_builder.WriteString(ansi.Highlight)
+				if block_indent <= 0 && tracking_block {
+					tracking_block = false
+					block_indent = 0
+				} 
 			} else {
 				line_builder.WriteString(ansi.Reset_text)
 			}
