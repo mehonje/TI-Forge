@@ -236,7 +236,7 @@ func Process_command_input(state state.State) state.State {
 						state.Text_buffer = []rune(create_error_string(err, "", ""))
 					} else {
 						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
-						if reflect.DeepEqual(state.Program_data, [][][]string{{{"\n"}}}) {
+						if reflect.DeepEqual(state.Program_data, [][][]string{{{"　"}}}) {
 							state.Program_data = [][][]string{program_data_commands}
 							state.File_names = []string{split_command[1]}
 						} else {
