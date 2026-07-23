@@ -49,7 +49,7 @@ func main() {
 		if state.Quit {
 			fmt.Print(ansi.Clear)
 			fmt.Print(ansi.Reset_cursor)
-			fmt.Print(ansi.Dehighlight)
+			fmt.Print(ansi.Reset_text)
 			fmt.Print(ansi.Show_cursor)
 			return
 		}

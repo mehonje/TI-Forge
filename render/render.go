@@ -41,7 +41,7 @@ func Display_data(state state.State) state.State {
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
 			} else {
-				line_builder.WriteString(ansi.Dehighlight)
+				line_builder.WriteString(ansi.Reset_text)
 			}
 
 			line_builder.WriteString(command)
@@ -60,11 +60,11 @@ func Display_data(state state.State) state.State {
 			}
 		}
 
-		line_builder.WriteString(ansi.Dehighlight)
+		line_builder.WriteString(ansi.Reset_text)
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
 		builder.WriteString(indentation_str)
 		builder.WriteString(line_builder.String()) // line
-		line_builder.WriteString(ansi.Dehighlight)
+		line_builder.WriteString(ansi.Reset_text)
 		builder.WriteByte('\n')
 
 		for indentation_change > 0 {
@@ -78,7 +78,7 @@ func Display_data(state state.State) state.State {
     screen_col += utf8.RuneCountInString(state.Program_data[state.Buffer_idx][state.Cursor_row][i])
 	}
 
-	builder.WriteString(ansi.Dehighlight)
+	builder.WriteString(ansi.Reset_text)
 	
 	builder.WriteString(state.File_names[state.Buffer_idx])
 	builder.WriteByte('\n')
@@ -107,7 +107,7 @@ func Display_data(state state.State) state.State {
 	if state.Mode == 1 || state.Mode == 2 {
 		builder.WriteString(ansi.Highlight)
 		builder.WriteString(" ")
-		builder.WriteString(ansi.Dehighlight)
+		builder.WriteString(ansi.Reset_text)
 	}
 
 	builder.WriteByte('\n')
@@ -132,7 +132,7 @@ func Display_data(state state.State) state.State {
 		builder.WriteString(command)
 
 		if idx == 0 {
-			builder.WriteString(ansi.Dehighlight)
+			builder.WriteString(ansi.Reset_text)
 		}
 
 		if idx <= 3 {

@@ -345,5 +345,5 @@ func Copy_selection(start_row int, start_col int, end_row int, end_col int, prog
 }
 
 func create_error_string(err error, prefix string, suffix string) string {
-	return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Dehighlight
+	return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Reset_text
 }
