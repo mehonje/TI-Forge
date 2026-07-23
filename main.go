@@ -33,6 +33,7 @@ func main() {
 		Copy_buffer: [][]string{},
 		Options: map[string]int{
 			"indent_size": 2,
+			"block_highlight": 1,
 		},
 	}
 	

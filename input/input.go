@@ -378,6 +378,10 @@ func set_option(option string, value int, state state.State) (state.State, error
 		return state, errors.New("Value cannot be negative for option \"indent_size\"")
 	}
 
+	if option == "block_highlight" && (value != 0 && value != 1) {
+		return state, errors.New("Value must be boolean (1 or 0) for option \"block_highlight\"")
+	}
+
 	state.Options[option] = value
 
 	return state, nil

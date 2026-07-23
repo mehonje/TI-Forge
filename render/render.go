@@ -64,12 +64,14 @@ func Display_data(state state.State) state.State {
 				}
 			}
 
-			if is_highlighted(i, j, state) || (block_indent <= 0 && tracking_block) {
+			if is_highlighted(i, j, state) {
+				line_builder.WriteString(ansi.Highlight)
+			} else if state.Options["block_highlight"] == 1 && tracking_block && block_indent <= 0 {
 				line_builder.WriteString(ansi.Highlight)
 				if block_indent <= 0 && tracking_block {
 					tracking_block = false
 					block_indent = 0
-				} 
+				}
 			} else {
 				line_builder.WriteString(ansi.Reset_text)
 			}
