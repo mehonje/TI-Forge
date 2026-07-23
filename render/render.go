@@ -15,6 +15,18 @@ import(
 	"golang.org/x/term"
 )
 
+type indent struct {
+	Str string
+	Change int
+	Size int
+	Block string
+}
+
+type highlight struct {
+	Active bool
+	Size int
+}
+
 func Display_data(state state.State) state.State {
 	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
@@ -31,29 +43,36 @@ func Display_data(state state.State) state.State {
 	builder.WriteString(ansi.Clear)
 	builder.WriteString(ansi.Reset_cursor)
 
-	var indent_size string = ""
-	for i := 0; i < state.Options["indent_size"]; i++ {
-		indent_size = indent_size + " "
+	indent := indent{
+		Str: "",
+		Change: 0,
+		Size: state.Options["indent_size"],
+		Block: "",
 	}
-	var indent_str string = ""
 
-	var tracking_block bool = false
-	var block_indent int = 0
+	for i := 0; i < indent.Size; i++ {
+		indent.Block = indent.Block + " "
+	}
+
+	highlight := highlight{
+		Active: false,
+		Size: 0,
+	}
 
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
-		var indent_change int = 0
+		indent.Change = 0
 
 		for j, command := range state.Program_data[state.Buffer_idx][i] {
-			tracking_block, block_indent, indent_str, indent_change = process_block_highlight(command, tracking_block, block_indent, i, j, state.Cursor_row, state.Cursor_col, indent_str, indent_change, state.Options["indent_size"])
+			highlight, indent = process_block_highlight(command, highlight, indent, i, j, state.Cursor_row, state.Cursor_col)
 
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
-			} else if state.Options["block_highlight"] == 1 && tracking_block && block_indent <= 0 {
+			} else if state.Options["block_highlight"] == 1 && highlight.Active && highlight.Size == 0 {
 				line_builder.WriteString(ansi.Highlight)
-				if block_indent <= 0 && tracking_block {
-					tracking_block = false
-					block_indent = 0
+				if highlight.Size == 0 && highlight.Active {
+					highlight.Active = false
+					highlight.Size = 0
 				}
 			} else {
 				line_builder.WriteString(ansi.Reset_text)
@@ -64,14 +83,14 @@ func Display_data(state state.State) state.State {
 
 		line_builder.WriteString(ansi.Reset_text)
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
-		builder.WriteString(indent_str)
+		builder.WriteString(indent.Str)
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString(ansi.Reset_text)
 		builder.WriteByte('\n')
 
-		for indent_change > 0 {
-			indent_str = indent_str + indent_size
-			indent_change--
+		for indent.Change > 0 {
+			indent.Str = indent.Str + indent.Block
+			indent.Change--
 		}
 	}
 
@@ -148,39 +167,39 @@ func Display_data(state state.State) state.State {
 	return state
 }
 
-func process_block_highlight(command string, tracking_block bool, block_indent int, row int, col int, cursor_row int, cursor_col int, indent_str string, indent_change int, indent_size int) (bool, int, string, int) {
+func process_block_highlight(command string, highlight highlight, indent indent, row int, col int, cursor_row int, cursor_col int) (highlight, indent) {
 	if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
 		if row == cursor_row && col == cursor_col {
-			tracking_block = true
-			block_indent = 0
+			highlight.Active = true
+			highlight.Size = 0
 		}
-		block_indent++
+		highlight.Size++
 
-		indent_change++
+		indent.Change++
 	} else if command == "End" {
-		block_indent--
+		highlight.Size--
 
-		if len(indent_str) > 0 {
-			indent_str = indent_str[:len(indent_str) - indent_size] 
+		if len(indent.Str) > 0 {
+			indent.Str = indent.Str[:len(indent.Str) - indent.Size] 
 		}
 	} else if command == "Else" {
-		if tracking_block {
-			block_indent--
+		if highlight.Active {
+			highlight.Size--
 		} else {
 			if row == cursor_row && col == cursor_col {
-				tracking_block = true
-				block_indent = 1
+				highlight.Active = true
+				highlight.Size = 1
 			}
 		}
 
-		if len(indent_str) > 0 {
-			indent_str = indent_str[:len(indent_str) - indent_size] 
+		if len(indent.Str) > 0 {
+			indent.Str = indent.Str[:len(indent.Str) - indent.Size] 
 		}
-		indent_change++
+		indent.Change++
 
 	}
 
-	return tracking_block, block_indent, indent_str, indent_change
+	return highlight, indent
 }
 
 func is_highlighted(row int, col int, state state.State) bool {
