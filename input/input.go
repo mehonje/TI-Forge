@@ -1,10 +1,12 @@
 package input
 
 import(
+	"fmt"
 	"math/rand/v2"
 	"os"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"ti_forge/ansi"
 	"ti_forge/convert"
@@ -268,6 +270,16 @@ func Process_command_input(state state.State) state.State {
 					} else {
 						state.Text_buffer = []rune("Check your web browser")
 					}
+				case "set": // change option, second element is option name, third is value
+					val, err := strconv.Atoi(split_command[2])
+					if err != nil {
+						state.Text_buffer = []rune(create_error_string(err, "Failed to set option", ""))
+					} else {
+						state, err := set_option(split_command[1], val, state)
+						if err != nil {
+							state.Text_buffer = []rune(create_error_string(err, "Failed to set option", ""))
+						}
+					}
 				default:
 					state.Text_buffer = []rune("Unknown command \"" + split_command[0] + "\"")
 			}
@@ -354,3 +366,19 @@ func Copy_selection(start_row int, start_col int, end_row int, end_col int, prog
 func create_error_string(err error, prefix string, suffix string) string {
 	return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Reset_text
 }
+
+func set_option(option string, value int, state state.State) (state.State, error) {
+	_, ok := state.Options[option]
+	if !ok {
+		return state, fmt.Errorf("Unknown option : \"%s\"", option)
+	}
+
+	if option == "indent_size" && value < 0 {
+		return state, fmt.Errorf("Value cannot be negative for option \"%s\"", option)
+	}
+
+	state.Options[option] = value
+
+	return state, nil
+}
+

@@ -31,6 +31,9 @@ func main() {
 		Highlight_col: 0,
 		Highlighting: false,
 		Copy_buffer: [][]string{},
+		Options: map[string]int{
+			"indent_size": 2,
+		},
 	}
 	
 	fd := int(os.Stdin.Fd())

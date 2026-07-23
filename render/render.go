@@ -31,6 +31,10 @@ func Display_data(state state.State) state.State {
 	builder.WriteString(ansi.Clear)
 	builder.WriteString(ansi.Reset_cursor)
 
+	var indentation_size string = ""
+	for i := 0; i < state.Options["indent_size"]; i++ {
+		indentation_size = indentation_size + " "
+	}
 	var indentation_str string = ""
 	
 	for i := buffer_start; i < buffer_end; i++ {
@@ -50,11 +54,11 @@ func Display_data(state state.State) state.State {
 				indentation_change++
 			} else if command == "End" {
 				if len(indentation_str) > 0 {
-					indentation_str = indentation_str[:len(indentation_str) - 1] 
+					indentation_str = indentation_str[:len(indentation_str) - state.Options["indent_size"]] 
 				}
 			} else if command == "Else" {
 				if len(indentation_str) > 0 {
-					indentation_str = indentation_str[:len(indentation_str) - 1] 
+					indentation_str = indentation_str[:len(indentation_str) - state.Options["indent_size"]] 
 				}
 				indentation_change++
 			}
@@ -68,7 +72,7 @@ func Display_data(state state.State) state.State {
 		builder.WriteByte('\n')
 
 		for indentation_change > 0 {
-			indentation_str = indentation_str + "	"
+			indentation_str = indentation_str + indentation_size
 			indentation_change--
 		}
 	}

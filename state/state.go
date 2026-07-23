@@ -15,5 +15,6 @@ type State struct {
 	Highlight_col int
 	Highlighting bool
 	Copy_buffer [][]string
+	Options map[string]int
 }
 
