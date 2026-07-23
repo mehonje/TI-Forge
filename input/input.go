@@ -131,6 +131,9 @@ func Process_normal_input(state state.State) state.State {
 			state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row + 1, []string{"　"})
 			state.Cursor_row++
 			state.Mode = 1
+		case "O": // [O], newline above cursor
+			state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row, []string{"　"})
+			state.Mode = 1
 		default:
 			state.Text_buffer = old_text_buffer
 	}
