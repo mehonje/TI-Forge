@@ -1,6 +1,7 @@
 package input
 
 import(
+	"errors"
 	"fmt"
 	"math/rand/v2"
 	"os"
@@ -273,11 +274,11 @@ func Process_command_input(state state.State) state.State {
 				case "set": // change option, second element is option name, third is value
 					val, err := strconv.Atoi(split_command[2])
 					if err != nil {
-						state.Text_buffer = []rune(create_error_string(err, "Failed to set option", ""))
+						state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
 					} else {
-						state, err := set_option(split_command[1], val, state)
+						state, err = set_option(split_command[1], val, state)
 						if err != nil {
-							state.Text_buffer = []rune(create_error_string(err, "Failed to set option", ""))
+							state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
 						}
 					}
 				default:
@@ -370,11 +371,11 @@ func create_error_string(err error, prefix string, suffix string) string {
 func set_option(option string, value int, state state.State) (state.State, error) {
 	_, ok := state.Options[option]
 	if !ok {
-		return state, fmt.Errorf("Unknown option : \"%s\"", option)
+		return state, fmt.Errorf("Unknown option: \"%s\"", option)
 	}
 
 	if option == "indent_size" && value < 0 {
-		return state, fmt.Errorf("Value cannot be negative for option \"%s\"", option)
+		return state, errors.New("Value cannot be negative for option \"indent_size\"")
 	}
 
 	state.Options[option] = value
