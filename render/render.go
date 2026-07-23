@@ -31,38 +31,21 @@ func Display_data(state state.State) state.State {
 	builder.WriteString(ansi.Clear)
 	builder.WriteString(ansi.Reset_cursor)
 
-	var indentation_size string = ""
+	var indent_size string = ""
 	for i := 0; i < state.Options["indent_size"]; i++ {
-		indentation_size = indentation_size + " "
+		indent_size = indent_size + " "
 	}
-	var indentation_str string = ""
+	var indent_str string = ""
 
 	var tracking_block bool = false
 	var block_indent int = 0
 
 	for i := buffer_start; i < buffer_end; i++ {
 		var line_builder strings.Builder
-		var indentation_change int = 0
+		var indent_change int = 0
 
 		for j, command := range state.Program_data[state.Buffer_idx][i] {
-			if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
-				if i == state.Cursor_row && j == state.Cursor_col {
-				tracking_block = true
-				block_indent = 0
-				}
-				block_indent++
-			} else if command == "End" {
-				block_indent--
-			} else if command == "Else" {
-				if tracking_block {
-					block_indent--
-				} else {
-					if i == state.Cursor_row && j == state.Cursor_col {
-					tracking_block = true
-						block_indent = 1
-					}
-				}
-			}
+			tracking_block, block_indent = process_block_highlight(command, tracking_block, block_indent, i, j, state.Cursor_row, state.Cursor_col)
 
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
@@ -78,30 +61,19 @@ func Display_data(state state.State) state.State {
 
 			line_builder.WriteString(command)
 
-			if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
-				indentation_change++
-			} else if command == "End" {
-				if len(indentation_str) > 0 {
-					indentation_str = indentation_str[:len(indentation_str) - state.Options["indent_size"]] 
-				}
-			} else if command == "Else" {
-				if len(indentation_str) > 0 {
-					indentation_str = indentation_str[:len(indentation_str) - state.Options["indent_size"]] 
-				}
-				indentation_change++
-			}
+			indent_str, indent_change = process_block_indent(command, indent_str, indent_change, state.Options["indent_size"])
 		}
 
 		line_builder.WriteString(ansi.Reset_text)
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
-		builder.WriteString(indentation_str)
+		builder.WriteString(indent_str)
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString(ansi.Reset_text)
 		builder.WriteByte('\n')
 
-		for indentation_change > 0 {
-			indentation_str = indentation_str + indentation_size
-			indentation_change--
+		for indent_change > 0 {
+			indent_str = indent_str + indent_size
+			indent_change--
 		}
 	}
 
@@ -178,6 +150,46 @@ func Display_data(state state.State) state.State {
 	return state
 }
 
+func process_block_highlight(command string, tracking_block bool, block_indent int, row int, col int, cursor_row int, cursor_col int) (bool, int) {
+	if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
+		if row == cursor_row && col == cursor_col {
+			tracking_block = true
+			block_indent = 0
+		}
+		block_indent++
+	} else if command == "End" {
+		block_indent--
+	} else if command == "Else" {
+		if tracking_block {
+			block_indent--
+		} else {
+			if row == cursor_row && col == cursor_col {
+				tracking_block = true
+				block_indent = 1
+			}
+		}
+	}
+
+	return tracking_block, block_indent
+}
+
+func process_block_indent(command string, indent_str string, indent_change int, indent_size int) (string, int) {
+	if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
+		indent_change++
+	} else if command == "End" {
+		if len(indent_str) > 0 {
+			indent_str = indent_str[:len(indent_str) - indent_size] 
+		}
+	} else if command == "Else" {
+		if len(indent_str) > 0 {
+			indent_str = indent_str[:len(indent_str) - indent_size] 
+		}
+		indent_change++
+	}
+
+	return indent_str, indent_change
+}
+
 func is_highlighted(row int, col int, state state.State) bool {
 	if !state.Highlighting {
 		if row == state.Cursor_row && col == state.Cursor_col {
@@ -208,6 +220,7 @@ func is_highlighted(row int, col int, state state.State) bool {
 
 	return true
 }
+
 func get_term_size() (int, int) {
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
