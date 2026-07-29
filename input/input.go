@@ -179,6 +179,7 @@ func Process_insert_input(state state.State) state.State {
 					state.Input = []byte{}
 					state.Suggestion_idx = 0
 					state.Text_buffer = []rune{}
+					state.Cursor_col++
 				}
 			}
 		default:
