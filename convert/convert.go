@@ -8,8 +8,7 @@ import (
 	"os"
 	"slices"
 	"strings"
-
-	"github.com/mehonje/TI-Convert/tokens"
+	"ti_forge/tokens"
 )
 
 var Commands []string

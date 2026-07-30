@@ -5,7 +5,6 @@ go 1.25.7
 require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/lithammer/fuzzysearch v1.1.8
-	github.com/mehonje/TI-Convert v0.0.0-20260628005706-cad0986e62db
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	golang.org/x/term v0.43.0
 )
