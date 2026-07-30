@@ -12,6 +12,7 @@ import(
 	"ti_forge/ansi"
 	"ti_forge/convert"
 	"ti_forge/state"
+	"ti_forge/tokens"
 
 	"github.com/atotto/clipboard"
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -154,7 +155,7 @@ func Process_insert_input(state state.State) state.State {
 			state.Suggestion_idx++
 
 			var command_matches []string
-			command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+			command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
 		
 			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 
@@ -162,13 +163,13 @@ func Process_insert_input(state state.State) state.State {
 			state.Suggestion_idx--
 
 			var command_matches []string
-			command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+			command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
 		
 			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 		case slices.Equal(state.Input, []byte{13}): // [enter]
 			if len(state.Text_buffer) > 0 { // if text buffer has characters
 				var command_matches []string
-				command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+				command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
 		
 				state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 

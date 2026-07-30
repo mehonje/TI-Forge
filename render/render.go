@@ -7,8 +7,8 @@ import(
 	"strconv"
 	"strings"
 	"ti_forge/ansi"
-	"ti_forge/convert"
 	"ti_forge/state"
+	"ti_forge/tokens"
 	"unicode/utf8"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -136,7 +136,7 @@ func Display_data(state state.State) state.State {
 	var display_command_matches []string
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
 		var command_matches []string
-		command_matches = fuzzy.FindFold(string(state.Text_buffer), convert.Commands) // find commands that match the text buffer,
+		command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
 		
 		if len(command_matches) > 0 {
 			var start int = min(state.Suggestion_idx, len(command_matches) - 1)

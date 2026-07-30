@@ -6,12 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 	"ti_forge/tokens"
 )
-
-var Commands []string
 
 func Read8xp(path string) ([]byte, [4]string, error) {
 	path = strings.TrimSpace(path)   // Remove whitespace
@@ -301,25 +298,3 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 	return nil
 }
 
-func init() {
-	for _, val := range tokens.Tokens {
-		Commands = append(Commands, val)
-	}
-	for _, val := range tokens.Tokens_bb {
-		Commands = append(Commands, val)
-	}
-	for _, val := range tokens.Tokens_ef {
-		Commands = append(Commands, val)
-	}
-	for _, val := range tokens.Tokens_63 {
-		Commands = append(Commands, val)
-	}
-	for _, val := range tokens.Tokens_5d {
-		Commands = append(Commands, val)
-	}
-	for _, val := range tokens.Tokens_7e {
-		Commands = append(Commands, val)
-	}
-
-	slices.Sort(Commands)
-}

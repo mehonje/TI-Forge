@@ -1,5 +1,9 @@
 package tokens
 
+import (
+	"slices"
+)
+
 var Tokens = map[byte]string{ // Normal tokens
 	0x3f: "\n",          // Newline
 	0x82: "*",           // Multiplication
@@ -278,27 +282,38 @@ var Tokens_aa = map[byte]string{
 
 var Reverse_tokens = map[string][]byte{}
 
+var Commands []string
+
 func init() {
 	for key, val := range Tokens {
 		Reverse_tokens[val] = []byte{key}
+		Commands = append(Commands, val)
 	}
 	for key, val := range Tokens_bb {
 		Reverse_tokens[val] = []byte{0xbb, key}
+		Commands = append(Commands, val)
 	}
 	for key, val := range Tokens_ef {
 		Reverse_tokens[val] = []byte{0xef, key}
+		Commands = append(Commands, val)
 	}
 	for key, val := range Tokens_63 {
 		Reverse_tokens[val] = []byte{0x63, key}
+		Commands = append(Commands, val)
 	}
 	for key, val := range Tokens_5d {
 		Reverse_tokens[val] = []byte{0x5d, key}
+		Commands = append(Commands, val)
 	}
 	for key, val := range Tokens_7e {
 		Reverse_tokens[val] = []byte{0x7e, key}
+		Commands = append(Commands, val)
 	}
 	for key, val := range Tokens_aa {
 		Reverse_tokens[val] = []byte{0xaa, key}
+		Commands = append(Commands, val)
 	}
+
+	slices.Sort(Commands)
 }
 
