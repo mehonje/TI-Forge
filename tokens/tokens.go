@@ -78,18 +78,18 @@ var Tokens = map[byte]string{ // Normal tokens
 	0xc4: "cos(",        //
 	0xc6: "tan(",        //
 	0xf0: "^",           //
-	0x0d: "^2",          //
-	0x0c: "^-1",         //
+	0x0d: "²",          //
+	0x0c: "⁻¹",         //
 	0xbc: "sqrt(",       //
-	0xac: "pi",          //
+	0xac: "π",          //
 	0x08: "{",           //
 	0x09: "}",           //
 	0x06: "[",           //
 	0x07: "]",           //
-	0x5b: "theta",       //
+	0x5b: "θ",       //
 	0x2c: "i",           //
 	0xaf: "?",           //
-	0x04: "->",          //
+	0x04: "→",          //
 	0xbe: "ln(",         //
 	0xc0: "log(",        //
 	0xc3: "arcsin(",     //
@@ -99,7 +99,7 @@ var Tokens = map[byte]string{ // Normal tokens
 	0x3e: ":",           //
 	0x03: ">Frac",       //
 	0x02: ">Dec",        //
-	0x0f: "^3",          //
+	0x0f: "³",          //
 	0x27: "fMin(",       //
 	0x28: "fMax(",       //
 	0x25: "nDeriv(",     //
@@ -280,6 +280,17 @@ var Tokens_aa = map[byte]string{
 	0x09: "Str0", //
 }
 
+var Token_aliases = map[string]string{
+	"squared": "²",
+	"^2": "²",
+	"cubed": "³",
+	"^3": "³",
+	"^-1": "⁻¹",
+	"pi": "π",
+	"theta": "θ",
+	"->": "→",
+}
+
 var Reverse_tokens = map[string][]byte{}
 
 var Commands []string
@@ -312,6 +323,10 @@ func init() {
 	for key, val := range Tokens_aa {
 		Reverse_tokens[val] = []byte{0xaa, key}
 		Commands = append(Commands, val)
+	}
+
+	for key := range Token_aliases {
+		Commands = append(Commands, key)
 	}
 
 	slices.Sort(Commands)

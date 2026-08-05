@@ -175,7 +175,12 @@ func Process_insert_input(state state.State) state.State {
 
 				if len(command_matches) >= 1 {
 					var idx int = min(state.Suggestion_idx, len(command_matches) - 1)
-					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command_matches[idx])
+					s := command_matches[idx]
+					alias, ok := tokens.Token_aliases[s]
+					if ok {
+						s = alias
+					}
+					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, s)
 
 					state.Input = []byte{}
 					state.Suggestion_idx = 0
