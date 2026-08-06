@@ -65,11 +65,11 @@ var Tokens = map[byte]string{ // Normal tokens
 	0x9a: "StoreGDB ",   //
 	0x9b: "RecallGDB ",  //
 	0x6a: "=",           // Equal
-	0x6f: "!=",          // Not equal
-	0x6c: ">",           //
-	0x6e: "<",           //
-	0x6b: ">=",          //
-	0x6d: "<=",          //
+	0x6f: "≠",          // Not equal
+	0x6c: ">",           // Greater than
+	0x6e: "<",           // Less than
+	0x6b: "≥",          // Greater than or equal
+	0x6d: "≤",          // Less than or equal
 	0x40: " and ",       //
 	0x3c: " or ",        //
 	0x3d: " xor ",       //
@@ -80,7 +80,7 @@ var Tokens = map[byte]string{ // Normal tokens
 	0xf0: "^",           //
 	0x0d: "²",          //
 	0x0c: "⁻¹",         //
-	0xbc: "sqrt(",       //
+	0xbc: "√(",       // Square root
 	0xac: "π",          //
 	0x08: "{",           //
 	0x09: "}",           //
@@ -92,13 +92,13 @@ var Tokens = map[byte]string{ // Normal tokens
 	0x04: "→",          //
 	0xbe: "ln(",         //
 	0xc0: "log(",        //
-	0xc3: "arcsin(",     //
-	0xc5: "arccos(",     //
-	0xc7: "arctan(",     //
+	0xc3: "sin⁻¹(",     //
+	0xc5: "cos⁻¹(",     //
+	0xc7: "tan⁻¹(",     //
 	0x2b: ",",           //
 	0x3e: ":",           //
-	0x03: ">Frac",       //
-	0x02: ">Dec",        //
+	0x03: "▸Frac",       //
+	0x02: "▸Dec",        //
 	0x0f: "³",          //
 	0x27: "fMin(",       //
 	0x28: "fMax(",       //
@@ -112,13 +112,13 @@ var Tokens = map[byte]string{ // Normal tokens
 	0x05: "BoxPlot",     //
 	0xfa: "ClrList ",    //
 	0xca: "cosh(",       //
-	0xcb: "arccosh(",    //
+	0xcb: "cosh⁻¹(",    //
 	0x2e: "CubicReg",    //
 	0x65: "Degree",      //
 	0x7d: "DependAsk",   //
 	0x7c: "DependAuto",  //
 	0xb3: "det(",        //
-	0x01: ">DMS",        //
+	0x01: "▸DMS",        //
 	0xbf: "e^(",         //
 	0x68: "Eng",         //
 	0xf5: "ExpReg",      //
@@ -166,7 +166,7 @@ var Tokens_bb = map[byte]string{ // 2-byte tokens
 	0x45: "GraphStyle(",   //
 	0x54: "DelVar ",       //
 	0x2a: "expr(",         //
-	0x56: "String->Equ(",  //
+	0x56: "String▸Equ(",  //
 	0x4f: "a+bi",          //
 	0x28: "angle(",        //
 	0x59: "ANOVA(",        //
@@ -174,9 +174,9 @@ var Tokens_bb = map[byte]string{ // 2-byte tokens
 	0x02: "bal(",          //
 	0x16: "binomcdf(",     //
 	0x15: "binompdf(",     //
-	0x13: "x^2cdf(",       //
-	0x1d: "x^pdf(",        //
-	0x40: "x^2-Test(",     //
+	0x13: "χ²cdf(",       //
+	0x1d: "χ²pdf(",        //
+	0x40: "χ²-Test(",     //
 	0x57: "Clear Entries", //
 	0x52: "ClrAllLists",   //
 	0x25: "conj(",         //
@@ -185,8 +185,8 @@ var Tokens_bb = map[byte]string{ // 2-byte tokens
 	0x67: "DiagnosticOff", //
 	0x66: "DiagnosticOn",  //
 	0x31: "e",             //
-	0x06: ">Eff(",         //
-	0x55: "Equ>String(",   //
+	0x06: "▸Eff(",         //
+	0x55: "Equ▸String(",   //
 	0x51: "ExprOff",       //
 	0x50: "ExprOn",        //
 }
@@ -216,14 +216,14 @@ var Tokens_ef = map[byte]string{
 	0x5b: "BackgroundOn ",  //
 	0x64: "BackgroundOff ", //
 	0x2e: "l",              //
-	0x33: "Sigma(",         //
+	0x33: "Σ(",         //
 	0x34: "logBASE(",       //
 	0xa6: "piecewise(",     //
 	0x3B: "AUTO",           //
 	0x6c: "BorderColor",    //
 	0x93: "CENTER",         //
 	0x02: "checkTmr(",      //
-	0x14: "x^2GOF-Test(",   //
+	0x14: "χ²GOF-Test(",   //
 	0x38: "CLASSIC",        //
 	0x0f: "ClockOff",       //
 	0x10: "ClockOn",        //
@@ -243,8 +243,8 @@ var Tokens_63 = map[byte]string{
 	0x0d: "Ymax",      //
 	0x03: "Yscl",      //
 	0x36: "Xres",      //
-	0x26: "deltaX",    //
-	0x27: "deltaY",    //
+	0x26: "ΔX",    //
+	0x27: "ΔY",    //
 	0x28: "XFact",     //
 	0x29: "Yfact",     //
 	0x38: "TraceStep", //
@@ -281,14 +281,51 @@ var Tokens_aa = map[byte]string{
 }
 
 var Token_aliases = map[string]string{
-	"squared": "²",
-	"^2": "²",
-	"cubed": "³",
-	"^3": "³",
-	"^-1": "⁻¹",
-	"pi": "π",
-	"theta": "θ",
-	"->": "→",
+	"squared":  "²",
+	"^2":       "²",
+	"cubed":    "³",
+	"^3":       "³",
+	"^-1":      "⁻¹",
+	"pi":       "π",
+	"theta":    "θ",
+	"->":       "→",
+	"!=":       "≠",
+	">=":       "≥",
+  "<=":       "≤",
+	"sqrt(":    "√(",
+	"sqrt":     "√(",
+	"arcsin(":  "sin⁻¹",
+	"arcsin":   "sin⁻¹",
+	"sin^-1":   "sin⁻¹",
+	"arccos(":  "cos⁻¹",
+	"arccos":   "cos⁻¹",
+	"cos^-1":   "cos⁻¹",
+	"arctan(":  "tan⁻¹",
+	"arctan":   "tan⁻¹",
+	"tan^-1":   "tan⁻¹",
+	"arccosh(":  "cosh⁻¹",
+	"arccosh":   "cosh⁻¹",
+	"cosh^-1":   "cosh⁻¹",
+	"x^2cdf(":   "χ²cdf",
+	"x2cdf(":   "χ²cdf",
+	"x^pdf(":    "χ²pdf(",
+	"xpdf(":    "χ²pdf(",
+	"x^2-Test(": "χ²-Test(",
+	"x2-Test(": "χ²-Test(",
+	"x^2GOF-Test(": "χ²GOF-Test(",
+	"x2GOF-Test(": "χ²GOF-Test(",
+	"deltaX":       "ΔX",
+	"deltaY":       "ΔY",
+	"sigma(":       "Σ(",
+	"sigma":        "Σ(",
+	"summation":    "Σ(",
+	"summation Σ(": "Σ(",
+	">Frac":        "▸Frac",
+	">Dec":         "▸Dec",
+	">DMS":         "▸DMS",
+	"String>Equ(":  "String▸Equ(",
+	">Eff(":        "▸Eff(",
+	"Equ>String(":  "Equ▸String(",
 }
 
 var Reverse_tokens = map[string][]byte{}
