@@ -13,6 +13,7 @@ import(
 	"ti_forge/convert"
 	"ti_forge/state"
 	"ti_forge/tokens"
+	"unicode"
 
 	"github.com/atotto/clipboard"
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -280,8 +281,58 @@ func Process_command_input(state *state.State) {
 							state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
 						}
 					}
+				case "lbl": // go to label, second argument is label name
+					if len(split_command[1]) > 2 {
+						state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Labels cannot be more than 2 characters long" + ansi.Reset_text)
+						break
+					}
+
+					label := []rune(split_command[1])
+
+					if !unicode.IsLetter(label[0]) && !unicode.IsDigit(label[0]){
+						state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Labels can only contain alphanumeric values" + ansi.Reset_text)
+						break
+					}
+					if len(label) > 1 {
+						if !unicode.IsLetter(label[1]) && !unicode.IsDigit(label[1]){
+							state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Labels can only contain alphanumeric values" + ansi.Reset_text)
+							break
+						}
+					}
+
+					label_found := false
+
+					OuterLoop:
+					for row_idx, line := range state.Buffers[state.Buffer_idx] {
+						for col_idx, token := range line {
+							if token != "Lbl " {
+								continue
+							}
+
+							var found_label []rune
+							if len(line) > col_idx + 1 {
+								found_label = append(found_label, []rune(line[col_idx + 1])[0])
+							}
+							if len(line) > col_idx + 2 {
+								found_label = append(found_label, []rune(line[col_idx + 2])[0])
+							}
+							if slices.Equal(found_label, label) {
+								state.Cursor_row = row_idx
+								state.Cursor_col = col_idx
+								label_found = true
+								break OuterLoop
+							}
+						}
+					}
+
+					if label_found {
+						break
+					}
+
+		
+					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Label \"" + string(label) + "\" not found" + ansi.Reset_text)
 				default:
-					state.Text_buffer = []rune("Unknown command \"" + split_command[0] + "\"")
+					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Unknown command \"" + split_command[0] + "\"" + ansi.Reset_text)
 			}
 		default: 
 			if len(state.Input) == 1 {
@@ -360,7 +411,10 @@ func Copy_selection(start_row int, start_col int, end_row int, end_col int, prog
 }
 
 func create_error_string(err error, prefix string, suffix string) string {
-	return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Reset_text
+	if err != nil {
+		return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Reset_text
+	}
+	return ansi.Bold + ansi.Red + prefix + suffix + ansi.Reset_text
 }
 
 func set_option(option string, value int, state *state.State) error {
