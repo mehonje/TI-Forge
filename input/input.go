@@ -38,11 +38,11 @@ func Process_input(state *state.State) {
 
 	if state.Cursor_row < 0 {
 		state.Cursor_row = 0
-	} else if state.Cursor_row >= len(state.Program_data[state.Buffer_idx]) {
-		state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
+	} else if state.Cursor_row >= len(state.Buffers[state.Buffer_idx]) {
+		state.Cursor_row = len(state.Buffers[state.Buffer_idx]) - 1
 	}
 
-	var line_length int = len(state.Program_data[state.Buffer_idx][state.Cursor_row])
+	var line_length int = len(state.Buffers[state.Buffer_idx][state.Cursor_row])
 	if state.Cursor_col < 0 {
 		state.Cursor_col = 0
 	} else if state.Cursor_col >= line_length {
@@ -82,12 +82,12 @@ func Process_normal_input(state *state.State) {
 		case ":": // [:], enter command mode
 			state.Mode = 2
 		case "x": // [x], delete command at cursor
-			if state.Program_data[state.Buffer_idx][state.Cursor_row][state.Cursor_col] != "　" {
-				state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Delete(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
-				if slices.Equal(state.Program_data[state.Buffer_idx][state.Cursor_row], []string{}) {
-					state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
-					if len(state.Program_data) == 0 {
-						state.Program_data = [][][]string{{{""}}}
+			if state.Buffers[state.Buffer_idx][state.Cursor_row][state.Cursor_col] != "　" {
+				state.Buffers[state.Buffer_idx][state.Cursor_row] = slices.Delete(state.Buffers[state.Buffer_idx][state.Cursor_row], state.Cursor_col, state.Cursor_col + 1)
+				if slices.Equal(state.Buffers[state.Buffer_idx][state.Cursor_row], []string{}) {
+					state.Buffers[state.Buffer_idx] = slices.Delete(state.Buffers[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
+					if len(state.Buffers) == 0 {
+						state.Buffers = [][][]string{{{""}}}
 					}
 				}
 			}
@@ -103,36 +103,36 @@ func Process_normal_input(state *state.State) {
 					if command == "\n" {
 						continue
 					}
-					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command)
+					state.Buffers[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Buffers[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command)
 				}
 			} else {
 				slices.Reverse(state.Copy_buffer)
 				for _, line := range state.Copy_buffer {
-					state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row, line)
+					state.Buffers[state.Buffer_idx] = slices.Insert(state.Buffers[state.Buffer_idx], state.Cursor_row, line)
 				}
 			}
 		case "dd": // delete line
-			if len(state.Program_data[state.Buffer_idx]) > 1 {
-				state.Program_data[state.Buffer_idx] = slices.Delete(state.Program_data[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
+			if len(state.Buffers[state.Buffer_idx]) > 1 {
+				state.Buffers[state.Buffer_idx] = slices.Delete(state.Buffers[state.Buffer_idx], state.Cursor_row, state.Cursor_row + 1)
 			}
 		case "gg": // go to top
 			state.Cursor_row = 0
 			state.Cursor_col = 0
 		case "G": // go to bottom
-			state.Cursor_row = len(state.Program_data[state.Buffer_idx]) - 1
+			state.Cursor_row = len(state.Buffers[state.Buffer_idx]) - 1
 			state.Cursor_col = 0
 		case "I": // go to beginning of line
 			state.Cursor_col = 0
 			state.Mode = 1
 		case "A": // go to beginning of line
-			state.Cursor_col = len(state.Program_data[state.Buffer_idx][state.Cursor_row]) - 1
+			state.Cursor_col = len(state.Buffers[state.Buffer_idx][state.Cursor_row]) - 1
 			state.Mode = 1
 		case "o": // [o], newline below cursor
-			state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row + 1, []string{"　"})
+			state.Buffers[state.Buffer_idx] = slices.Insert(state.Buffers[state.Buffer_idx], state.Cursor_row + 1, []string{"　"})
 			state.Cursor_row++
 			state.Mode = 1
 		case "O": // [O], newline above cursor
-			state.Program_data[state.Buffer_idx] = slices.Insert(state.Program_data[state.Buffer_idx], state.Cursor_row, []string{"　"})
+			state.Buffers[state.Buffer_idx] = slices.Insert(state.Buffers[state.Buffer_idx], state.Cursor_row, []string{"　"})
 			state.Mode = 1
 		default:
 			state.Text_buffer = old_text_buffer
@@ -174,7 +174,7 @@ func Process_insert_input(state *state.State) {
 					if ok {
 						s = alias
 					}
-					state.Program_data[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Program_data[state.Buffer_idx][state.Cursor_row], state.Cursor_col, s)
+					state.Buffers[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Buffers[state.Buffer_idx][state.Cursor_row], state.Cursor_col, s)
 
 					state.Input = []byte{}
 					state.Suggestion_idx = 0
@@ -214,12 +214,12 @@ func Process_command_input(state *state.State) {
 			switch split_command[0] {
 				case "w": // write, second element is file path (if it exists)
 					if len(split_command) > 1 {
-						err := convert.Txt_to_eightxp(split_command[1], state.Program_data[state.Buffer_idx])
+						err := convert.Txt_to_eightxp(split_command[1], state.Buffers[state.Buffer_idx])
 						if err != nil {
 							state.Text_buffer = []rune(create_error_string(err, "", ""))
 						}
 					} else {
-						err := convert.Txt_to_eightxp(state.File_names[state.Buffer_idx], state.Program_data[state.Buffer_idx])
+						err := convert.Txt_to_eightxp(state.File_names[state.Buffer_idx], state.Buffers[state.Buffer_idx])
 						if err != nil {
 							state.Text_buffer = []rune(create_error_string(err, "", ""))
 						}
@@ -235,17 +235,17 @@ func Process_command_input(state *state.State) {
 						state.Text_buffer = []rune(create_error_string(err, "", ""))
 					} else {
 						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
-						if reflect.DeepEqual(state.Program_data, [][][]string{{{"　"}}}) {
-							state.Program_data = [][][]string{program_data_commands}
+						if reflect.DeepEqual(state.Buffers, [][][]string{{{"　"}}}) {
+							state.Buffers = [][][]string{program_data_commands}
 							state.File_names = []string{split_command[1]}
 						} else {
-							state.Program_data = append(state.Program_data, program_data_commands)
+							state.Buffers = append(state.Buffers, program_data_commands)
 							state.File_names = append(state.File_names, split_command[1])
 							state.Buffer_idx++
 						}
 					}
 				case "bn": // next buffer
-					if state.Buffer_idx < len(state.Program_data) - 1 {
+					if state.Buffer_idx < len(state.Buffers) - 1 {
 						state.Buffer_idx++
 					} else {
 						state.Text_buffer = []rune("Reached last buffer")
@@ -304,7 +304,7 @@ func Process_visual_input(state *state.State) {
 			start_row, start_col := state.Cursor_row, state.Cursor_col
 			end_row, end_col := state.Highlight_row, state.Highlight_col
 	
-			state.Copy_buffer = Copy_selection(start_row, start_col, end_row, end_col, state.Program_data[state.Buffer_idx])
+			state.Copy_buffer = Copy_selection(start_row, start_col, end_row, end_col, state.Buffers[state.Buffer_idx])
 
 			state.Mode = 0
 			state.Highlighting = false
@@ -312,7 +312,7 @@ func Process_visual_input(state *state.State) {
 			start_row, start_col := state.Cursor_row, state.Cursor_col
 			end_row, end_col := state.Highlight_row, state.Highlight_col
 	
-			var buffer [][]string = Copy_selection(start_row, start_col, end_row, end_col, state.Program_data[state.Buffer_idx])
+			var buffer [][]string = Copy_selection(start_row, start_col, end_row, end_col, state.Buffers[state.Buffer_idx])
 
 			var builder strings.Builder
 

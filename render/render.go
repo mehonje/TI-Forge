@@ -28,7 +28,9 @@ type highlight struct {
 }
 
 func Display_data(state *state.State) {
-	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
+	program_data := state.Buffers[state.Buffer_idx]
+
+	max_line_num_len := len(strconv.Itoa(len(program_data)))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
 	_, height := get_term_size()
@@ -36,7 +38,7 @@ func Display_data(state *state.State) {
 	half_height := height/2
 	var buffer_row int = state.Cursor_row
 	var buffer_start int = max(0, buffer_row-half_height)
-	var buffer_end int = min(buffer_row+half_height, len(state.Program_data[state.Buffer_idx]))
+	var buffer_end int = min(buffer_row+half_height, len(program_data))
 
 	var builder strings.Builder
 
@@ -63,7 +65,7 @@ func Display_data(state *state.State) {
 		var line_builder strings.Builder
 		indent.Change = 0
 
-		for j, command := range state.Program_data[state.Buffer_idx][i] {
+		for j, command := range program_data[i] {
 			highlight, indent = process_block_highlight(command, highlight, indent, i, j, state.Cursor_row, state.Cursor_col)
 
 			if is_highlighted(i, j, state) {
@@ -96,7 +98,7 @@ func Display_data(state *state.State) {
 
 	var screen_col int = max_line_num_len+2
 	for i := 0; i < state.Cursor_col; i++ {
-    screen_col += utf8.RuneCountInString(state.Program_data[state.Buffer_idx][state.Cursor_row][i])
+    screen_col += utf8.RuneCountInString(program_data[state.Cursor_row][i])
 	}
 
 	builder.WriteString(ansi.Reset_text)
