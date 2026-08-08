@@ -27,7 +27,7 @@ type highlight struct {
 	Size int
 }
 
-func Display_data(state state.State) state.State {
+func Display_data(state *state.State) {
 	max_line_num_len := len(strconv.Itoa(len(state.Program_data[state.Buffer_idx])))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
@@ -162,9 +162,6 @@ func Display_data(state state.State) state.State {
 	}
 
 	os.Stdout.WriteString(builder.String())
-	
-
-	return state
 }
 
 func process_block_highlight(command string, highlight highlight, indent indent, row int, col int, cursor_row int, cursor_col int) (highlight, indent) {
@@ -202,7 +199,7 @@ func process_block_highlight(command string, highlight highlight, indent indent,
 	return highlight, indent
 }
 
-func is_highlighted(row int, col int, state state.State) bool {
+func is_highlighted(row int, col int, state *state.State) bool {
 	if !state.Highlighting {
 		if row == state.Cursor_row && col == state.Cursor_col {
 			return true

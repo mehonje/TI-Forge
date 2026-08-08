@@ -19,23 +19,21 @@ import(
 	"github.com/pkg/browser"
 )
 
-func Get_input(state state.State) state.State {
+func Get_input(state *state.State) {
     buf := make([]byte, 10)
     n, err := os.Stdin.Read(buf)
     if err != nil || n == 0 {
         state.Input = []byte{}
-				return state
     }
 		state.Input = buf[:n]
-		return state
 }
 
-func Process_input(state state.State) state.State {
+func Process_input(state *state.State) {
 	switch state.Mode {
-		case 0: state = Process_normal_input(state)
-		case 1: state = Process_insert_input(state)
-		case 2: state = Process_command_input(state)
-		case 3: state = Process_visual_input(state)
+		case 0: Process_normal_input(state)
+		case 1: Process_insert_input(state)
+		case 2: Process_command_input(state)
+		case 3: Process_visual_input(state)
 	}
 
 	if state.Cursor_row < 0 {
@@ -57,11 +55,9 @@ func Process_input(state state.State) state.State {
 			state.Text_buffer = []rune{}
 			state.Highlighting = false
 	}
-
-	return state
 }
 
-func Process_normal_input(state state.State) state.State {
+func Process_normal_input(state *state.State) {
 	if len(state.Input) == 1 {
 		state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
 	}
@@ -141,11 +137,9 @@ func Process_normal_input(state state.State) state.State {
 		default:
 			state.Text_buffer = old_text_buffer
 	}
-
-	return state
 }
 
-func Process_insert_input(state state.State) state.State {
+func Process_insert_input(state *state.State) {
 	switch {
 		case slices.Equal(state.Input, []byte{127}): // [backspace]
 			if len(state.Text_buffer) > 0 {
@@ -193,8 +187,6 @@ func Process_insert_input(state state.State) state.State {
 				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
 			}
 	}
-
-	return state
 }
 
 func bound_suggestion_idx(idx int, suggestions int) int {
@@ -207,7 +199,7 @@ func bound_suggestion_idx(idx int, suggestions int) int {
 	return idx
 }
 
-func Process_command_input(state state.State) state.State {
+func Process_command_input(state *state.State) {
 	switch {
 		case slices.Equal(state.Input, []byte{127}): // [backspace]
 			if len(state.Text_buffer) > 0 {
@@ -283,7 +275,7 @@ func Process_command_input(state state.State) state.State {
 					if err != nil {
 						state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
 					} else {
-						state, err = set_option(split_command[1], val, state)
+						err = set_option(split_command[1], val, state)
 						if err != nil {
 							state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
 						}
@@ -296,11 +288,9 @@ func Process_command_input(state state.State) state.State {
 				state.Text_buffer = append(state.Text_buffer, rune(state.Input[0]))
 			}
 	}
-
-	return state
 }
 
-func Process_visual_input(state state.State) state.State {
+func Process_visual_input(state *state.State) {
 	switch {
 		case slices.Equal(state.Input, []byte{104}): // [h], left
 			state.Cursor_col--
@@ -340,8 +330,6 @@ func Process_visual_input(state state.State) state.State {
 			state.Mode = 0
 			state.Highlighting = false
 	}
-
-	return state
 }
 
 func Copy_selection(start_row int, start_col int, end_row int, end_col int, program_data [][]string) [][]string {
@@ -375,22 +363,22 @@ func create_error_string(err error, prefix string, suffix string) string {
 	return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Reset_text
 }
 
-func set_option(option string, value int, state state.State) (state.State, error) {
+func set_option(option string, value int, state *state.State) error {
 	_, ok := state.Options[option]
 	if !ok {
-		return state, fmt.Errorf("Unknown option: \"%s\"", option)
+		return fmt.Errorf("Unknown option: \"%s\"", option)
 	}
 
 	if option == "indent_size" && value < 0 {
-		return state, errors.New("Value cannot be negative for option \"indent_size\"")
+		return errors.New("Value cannot be negative for option \"indent_size\"")
 	}
 
 	if option == "block_highlight" && (value != 0 && value != 1) {
-		return state, errors.New("Value must be boolean (1 or 0) for option \"block_highlight\"")
+		return errors.New("Value must be boolean (1 or 0) for option \"block_highlight\"")
 	}
 
 	state.Options[option] = value
 
-	return state, nil
+	return nil
 }
 

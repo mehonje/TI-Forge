@@ -46,9 +46,9 @@ func main() {
 	fmt.Print(ansi.Hide_cursor)
 
 	for {
-		state = render.Display_data(state)
-		state = input.Get_input(state)
-		state = input.Process_input(state)
+		render.Display_data(&state)
+		input.Get_input(&state)
+		input.Process_input(&state)
 		
 		if state.Quit {
 			fmt.Print(ansi.Clear)
