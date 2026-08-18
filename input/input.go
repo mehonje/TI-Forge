@@ -1,6 +1,6 @@
 package input
 
-import(
+import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -11,6 +11,7 @@ import(
 	"strings"
 	"ti_forge/ansi"
 	"ti_forge/convert"
+	"ti_forge/render"
 	"ti_forge/state"
 	"ti_forge/tokens"
 	"unicode"
@@ -138,6 +139,8 @@ func Process_normal_input(state *state.State) {
 		default:
 			state.Text_buffer = old_text_buffer
 	}
+
+	bound_cursor(state)
 }
 
 func Process_insert_input(state *state.State) {
@@ -434,5 +437,24 @@ func set_option(option string, value int, state *state.State) error {
 	state.Options[option] = value
 
 	return nil
+}
+
+func bound_cursor(state *state.State) {
+	lines := len(state.Buffers[state.Buffer_idx])
+	_, height := render.Get_term_size()
+	height -= 6
+
+	state.Cursor_row = max(0, min(state.Cursor_row, lines))
+
+	if state.Cursor_row >= state.Viewport_row + height {
+		state.Viewport_row = state.Cursor_row - height + 1
+	}
+
+	if state.Cursor_row < state.Viewport_row {
+		state.Viewport_row = state.Cursor_row
+	}
+
+	max_viewport := max(0, lines - height)
+	state.Viewport_row = max(0, min(state.Viewport_row, max_viewport))
 }
 

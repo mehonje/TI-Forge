@@ -16,5 +16,6 @@ type State struct {
 	Highlighting bool
 	Copy_buffer [][]string
 	Options map[string]int
+	Viewport_row int
 }
 

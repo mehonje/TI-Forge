@@ -33,12 +33,12 @@ func Display_data(state *state.State) {
 	max_line_num_len := len(strconv.Itoa(len(program_data)))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
-	_, height := get_term_size()
+	_, height := Get_term_size()
 	height -= 6
-	half_height := height/2
-	var buffer_row int = state.Cursor_row
-	var buffer_start int = max(0, buffer_row-half_height)
-	var buffer_end int = min(buffer_row+half_height, len(program_data))
+	//half_height := height/2
+	//var buffer_row int = state.Viewport_row
+	//var buffer_start int = state.Viewport_row
+	//var buffer_end int = buffer_start + height
 
 	var builder strings.Builder
 
@@ -61,7 +61,11 @@ func Display_data(state *state.State) {
 		Size: 0,
 	}
 
-	for i := buffer_start; i < buffer_end; i++ {
+	for i := state.Viewport_row; i < state.Viewport_row + height; i++ {
+		if i >= len(program_data) {
+			break
+		}
+
 		var line_builder strings.Builder
 		indent.Change = 0
 
@@ -232,7 +236,7 @@ func is_highlighted(row int, col int, state *state.State) bool {
 	return true
 }
 
-func get_term_size() (int, int) {
+func Get_term_size() (int, int) {
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		log.Fatal("Failed to get terminal dimensions: ", err)
