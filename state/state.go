@@ -9,6 +9,7 @@ type State struct {
 	Suggestion_idx int
 	Input []byte
 	Buffers [][][]string
+	Indentation [][]int
 	File_names []string
 	Buffer_idx int
 	Highlight_row int

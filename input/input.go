@@ -31,6 +31,14 @@ func Get_input(state *state.State) {
 }
 
 func Process_input(state *state.State) {
+	old_buffers := make([][][]string, len(state.Buffers))
+	for i, buffer := range state.Buffers {
+		old_buffers[i] = make([][]string, len(buffer))
+		for j, row := range buffer {
+			old_buffers[i][j] = slices.Clone(row)
+		}
+	}
+
 	switch state.Mode {
 		case 0: Process_normal_input(state)
 		case 1: Process_insert_input(state)
@@ -49,6 +57,16 @@ func Process_input(state *state.State) {
 		state.Cursor_col = 0
 	} else if state.Cursor_col >= line_length {
 		state.Cursor_col = line_length - 1
+	}
+	
+	changed := !slices.EqualFunc(state.Buffers, old_buffers, func(slice1, slice2 [][]string) bool {
+		return slices.EqualFunc(slice1, slice2, func(row1, row2 []string) bool {
+			return slices.Equal(row1, row2)
+		})
+	})
+
+	if changed {
+		render.Calculate_indentation(state)
 	}
 
 	switch {

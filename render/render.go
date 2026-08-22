@@ -15,13 +15,6 @@ import(
 	"golang.org/x/term"
 )
 
-type indent struct {
-	Str string
-	Change int
-	Size int
-	Block string
-}
-
 type highlight struct {
 	Active bool
 	Size int
@@ -35,25 +28,16 @@ func Display_data(state *state.State) {
 	
 	_, height := Get_term_size()
 	height -= 6
-	//half_height := height/2
-	//var buffer_row int = state.Viewport_row
-	//var buffer_start int = state.Viewport_row
-	//var buffer_end int = buffer_start + height
 
 	var builder strings.Builder
 
 	builder.WriteString(ansi.Clear)
 	builder.WriteString(ansi.Reset_cursor)
 
-	indent := indent{
-		Str: "",
-		Change: 0,
-		Size: state.Options["indent_size"],
-		Block: "",
-	}
+	indent_block := ""
 
-	for i := 0; i < indent.Size; i++ {
-		indent.Block = indent.Block + " "
+	for i := 0; i < state.Options["indent_size"]; i++ {
+		indent_block = indent_block + " "
 	}
 
 	highlight := highlight{
@@ -67,10 +51,9 @@ func Display_data(state *state.State) {
 		}
 
 		var line_builder strings.Builder
-		indent.Change = 0
 
 		for j, command := range program_data[i] {
-			highlight, indent = process_block_highlight(command, highlight, indent, i, j, state.Cursor_row, state.Cursor_col)
+			highlight = process_block_highlight(command, highlight, i, j, state.Cursor_row, state.Cursor_col)
 
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
@@ -89,15 +72,10 @@ func Display_data(state *state.State) {
 
 		line_builder.WriteString(ansi.Reset_text)
 		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
-		builder.WriteString(indent.Str)
+		builder.WriteString(strings.Repeat(indent_block, state.Indentation[state.Buffer_idx][i])) // indent
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString(ansi.Reset_text)
 		builder.WriteByte('\n')
-
-		for indent.Change > 0 {
-			indent.Str = indent.Str + indent.Block
-			indent.Change--
-		}
 	}
 
 	var screen_col int = max_line_num_len+2
@@ -170,21 +148,16 @@ func Display_data(state *state.State) {
 	os.Stdout.WriteString(builder.String())
 }
 
-func process_block_highlight(command string, highlight highlight, indent indent, row int, col int, cursor_row int, cursor_col int) (highlight, indent) {
+func process_block_highlight(command string, highlight highlight, row int, col int, cursor_row int, cursor_col int) highlight {
 	if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
 		if row == cursor_row && col == cursor_col {
 			highlight.Active = true
 			highlight.Size = 0
 		}
 		highlight.Size++
-
-		indent.Change++
 	} else if command == "End" {
 		highlight.Size--
 
-		if len(indent.Str) > 0 {
-			indent.Str = indent.Str[:len(indent.Str) - indent.Size] 
-		}
 	} else if command == "Else" {
 		if highlight.Active {
 			highlight.Size--
@@ -194,15 +167,9 @@ func process_block_highlight(command string, highlight highlight, indent indent,
 				highlight.Size = 1
 			}
 		}
-
-		if len(indent.Str) > 0 {
-			indent.Str = indent.Str[:len(indent.Str) - indent.Size] 
-		}
-		indent.Change++
-
 	}
 
-	return highlight, indent
+	return highlight
 }
 
 func is_highlighted(row int, col int, state *state.State) bool {
@@ -234,6 +201,34 @@ func is_highlighted(row int, col int, state *state.State) bool {
 	}
 
 	return true
+}
+
+func Calculate_indentation(state *state.State) {
+	program_data := state.Buffers[state.Buffer_idx]
+	state.Indentation[state.Buffer_idx] = make([]int, len(program_data))
+
+	indent := 0
+	for row_idx, row := range program_data {
+		indent_change := 0
+		for col := range row {
+			command := program_data[row_idx][col]
+
+			if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
+				indent_change++
+			} else if command == "End" {
+				if indent > 0 {
+					indent--
+				}
+			} else if command == "Else" {
+				if indent > 0 {
+					indent--
+				}
+				indent_change++
+			}
+		}
+		state.Indentation[state.Buffer_idx][row_idx] = indent
+		indent += indent_change
+	}
 }
 
 func Get_term_size() (int, int) {

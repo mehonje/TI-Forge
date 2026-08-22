@@ -25,6 +25,7 @@ func main() {
 		Suggestion_idx: 0,
 		Input: []byte{},
 		Buffers: [][][]string{{{"　"}}},
+		Indentation: [][]int{{0}},
 		File_names: []string{""},
 		Buffer_idx: 0,
 		Highlight_row: 0,
