@@ -238,12 +238,12 @@ func Process_command_input(state *state.State) {
 					if len(split_command) > 1 {
 						err := convert.Txt_to_eightxp(split_command[1], state.Buffers[state.Buffer_idx])
 						if err != nil {
-							state.Text_buffer = []rune(create_error_string(err, "", ""))
+							state.Text_buffer = []rune(ansi.Bold + ansi.Red + err.Error() + ansi.Reset_text)
 						}
 					} else {
 						err := convert.Txt_to_eightxp(state.File_names[state.Buffer_idx], state.Buffers[state.Buffer_idx])
 						if err != nil {
-							state.Text_buffer = []rune(create_error_string(err, "", ""))
+							state.Text_buffer = []rune(ansi.Bold + ansi.Red + err.Error() + ansi.Reset_text)
 						}
 					}
 				case "q": // quit
@@ -254,7 +254,7 @@ func Process_command_input(state *state.State) {
 					program_data, program_metadata, err := convert.Read8xp(split_command[1])
 
 					if err != nil {
-						state.Text_buffer = []rune(create_error_string(err, "", ""))
+						state.Text_buffer = []rune(ansi.Bold + ansi.Red + err.Error() + ansi.Reset_text)
 					} else {
 						program_data_commands := convert.Data_to_strings(program_data, program_metadata)
 						if reflect.DeepEqual(state.Buffers, [][][]string{{{"　"}}}) {
@@ -282,24 +282,24 @@ func Process_command_input(state *state.State) {
 					if num == 0 {
 						err := browser.OpenURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 						if err != nil {
-							state.Text_buffer = []rune(create_error_string(err, "Failed to open browser: ", ""))
+							state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to open browser: " + err.Error() + ansi.Reset_text)
 						}
 					}
 
 					err := browser.OpenURL("https://github.com/mehonje/TI-Forge")
 					if err != nil {
-						state.Text_buffer = []rune(create_error_string(err, "Failed to open browser: ", ""))
+						state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to open browser: " + err.Error() + ansi.Reset_text)
 					} else {
 						state.Text_buffer = []rune("Check your web browser")
 					}
 				case "set": // change option, second element is option name, third is value
 					val, err := strconv.Atoi(split_command[2])
 					if err != nil {
-						state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
+						state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to set option: " + err.Error() + ansi.Reset_text)
 					} else {
 						err = set_option(split_command[1], val, state)
 						if err != nil {
-							state.Text_buffer = []rune(create_error_string(err, "Failed to set option: ", ""))
+							state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to set option: " + err.Error() + ansi.Reset_text)
 						}
 					}
 				case "lbl": // go to label, second argument is label name
@@ -396,7 +396,7 @@ func Process_visual_input(state *state.State) {
 			
 			err := clipboard.WriteAll(builder.String())
 				if err != nil {
-					state.Text_buffer = []rune(create_error_string(err, "Failed to set clipboard : ", ""))
+					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to set clipboard : " + err.Error() + ansi.Reset_text)
 				}
 
 			state.Mode = 0
@@ -429,13 +429,6 @@ func Copy_selection(start_row int, start_col int, end_row int, end_col int, prog
 	}
 
 	return buffer
-}
-
-func create_error_string(err error, prefix string, suffix string) string {
-	if err != nil {
-		return ansi.Bold + ansi.Red + prefix + err.Error() + suffix + ansi.Reset_text
-	}
-	return ansi.Bold + ansi.Red + prefix + suffix + ansi.Reset_text
 }
 
 func set_option(option string, value int, state *state.State) error {
