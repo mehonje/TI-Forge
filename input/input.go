@@ -46,17 +46,24 @@ func Process_input(state *state.State) {
 		case 3: Process_visual_input(state)
 	}
 
-	if state.Cursor_row < 0 {
+	if len(state.Buffers) == 0 {
 		state.Cursor_row = 0
-	} else if state.Cursor_row >= len(state.Buffers[state.Buffer_idx]) {
-		state.Cursor_row = len(state.Buffers[state.Buffer_idx]) - 1
-	}
-
-	var line_length int = len(state.Buffers[state.Buffer_idx][state.Cursor_row])
-	if state.Cursor_col < 0 {
 		state.Cursor_col = 0
-	} else if state.Cursor_col >= line_length {
-		state.Cursor_col = line_length - 1
+	} else {
+		if state.Cursor_row < 0 {
+			state.Cursor_row = 0
+		} else if state.Cursor_row >= len(state.Buffers[state.Buffer_idx]) {
+			state.Cursor_row = len(state.Buffers[state.Buffer_idx]) - 1
+		}
+	
+		var line_length int = len(state.Buffers[state.Buffer_idx][state.Cursor_row])
+		if line_length == 0 {
+			state.Cursor_col = 0
+		} else if state.Cursor_col < 0 {
+				state.Cursor_col = 0
+		} else if state.Cursor_col >= line_length {
+			state.Cursor_col = line_length - 1
+		}
 	}
 	
 	changed := !slices.EqualFunc(state.Buffers, old_buffers, func(slice1, slice2 [][]string) bool {
@@ -262,6 +269,7 @@ func Process_command_input(state *state.State) {
 							state.File_names = []string{split_command[1]}
 						} else {
 							state.Buffers = append(state.Buffers, program_data_commands)
+							state.Indentation = append(state.Indentation, make([]int, 0))
 							state.File_names = append(state.File_names, split_command[1])
 							state.Buffer_idx++
 						}

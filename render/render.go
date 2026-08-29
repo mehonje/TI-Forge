@@ -204,28 +204,33 @@ func is_highlighted(row int, col int, state *state.State) bool {
 }
 
 func Calculate_indentation(state *state.State) {
+	fmt.Println(state.Buffers)
+
 	program_data := state.Buffers[state.Buffer_idx]
 	state.Indentation[state.Buffer_idx] = make([]int, len(program_data))
 
 	indent := 0
 	for row_idx, row := range program_data {
 		indent_change := 0
-		for col := range row {
-			command := program_data[row_idx][col]
+		if len(row) > 0 {
+			for col := range row {
+				command := program_data[row_idx][col]
 
-			if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
-				indent_change++
-			} else if command == "End" {
-				if indent > 0 {
-					indent--
+				if command == "For(" || command == "Repeat " || command == "While " || command == "If " {
+					indent_change++
+				} else if command == "End" {
+					if indent > 0 {
+						indent--
+					}
+				} else if command == "Else" {
+					if indent > 0 {
+						indent--
+					}
+					indent_change++
 				}
-			} else if command == "Else" {
-				if indent > 0 {
-					indent--
-				}
-				indent_change++
 			}
 		}
+
 		state.Indentation[state.Buffer_idx][row_idx] = indent
 		indent += indent_change
 	}
