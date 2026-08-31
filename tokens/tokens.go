@@ -362,6 +362,9 @@ func init() {
 		Commands = append(Commands, val)
 	}
 
+	Commands = append(Commands, "true")
+	Commands = append(Commands, "false")
+
 	for key := range Token_aliases {
 		Commands = append(Commands, key)
 	}

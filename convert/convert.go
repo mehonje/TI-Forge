@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"ti_forge/tokens"
 )
@@ -54,9 +55,17 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 		lines[1] = append(lines[1], string(char))
 	}
 
-	lines = append(lines, []string{program_metadata[2]})
+	if program_metadata[2] == "06" { // locked
+		lines = append(lines, []string{"true"})
+	} else { // unlocked
+		lines = append(lines, []string{"false"})
+	}
 
-	lines = append(lines, []string{program_metadata[3]})
+	if program_metadata[3] == "80" { // archived
+		lines = append(lines, []string{"true"})
+	} else { // unarchived
+		lines = append(lines, []string{"false"})
+	}
 	
 
 	var i int
@@ -182,23 +191,22 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 			}
 		}
 	}
-	
+
 	{
-		var string_byte string = strings.Join(program_lines[2][:len(program_lines[2])-1], "")
-		b, err := hex.DecodeString(string_byte)
-		if err != nil {
-			return errors.New("Failed to convert string\"" + string_byte + "\" to byte")
+		if program_lines[2][0] == "true" {
+			metadata[2] = []byte{0x06}
+		} else {
+			metadata[2] = []byte{0x05}
 		}
-		metadata[2] = b
 	}
 	{
-		var string_byte string = strings.Join(program_lines[3][:len(program_lines[3])-1], "")
-		b, err := hex.DecodeString(string_byte)
-		if err != nil {
-			return errors.New("Failed to convert string\"" + string_byte + "\" to byte")
+		if program_lines[3][0] == "true" {
+			metadata[3] = []byte{0x80}
+		} else {
+			metadata[3] = []byte{0x00}
 		}
-		metadata[3] = b
 	}
+
 	if len(metadata[0]) > 8 {
 		return errors.New("Program name (line 1) cannot be longer than 8 characters")
 	}
@@ -233,13 +241,18 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 
 	var program_lines_no_meta [][]string = program_lines[4:]
 	var program_commands []string = []string{}
-	for _, line := range program_lines_no_meta {
+	for row, line := range program_lines_no_meta {
 		for _, command := range line {
-			if command == "　" {
-				program_commands = append(program_commands, "\n")
-				continue
+			switch command {
+				case "　":
+					program_commands = append(program_commands, "\n")
+				case "true":
+					return errors.New("Program cannot contain \"true\" command. Line " + strconv.Itoa(5 + row)) // add 5 to make up for 4 metadata lines and 0-indexing
+				case "false":
+					return errors.New("Program cannot contain \"false\" command. Line " + strconv.Itoa(5 + row))
+				default:
+					program_commands = append(program_commands, command)
 			}
-			program_commands = append(program_commands, command)
 		}
 	}
 

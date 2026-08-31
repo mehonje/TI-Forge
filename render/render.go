@@ -15,6 +15,8 @@ import(
 	"golang.org/x/term"
 )
 
+var LINE_NAMES = [4]string{"　name", "　comment", "　locked?", "　archived?"}
+
 type highlight struct {
 	Active bool
 	Size int
@@ -75,6 +77,11 @@ func Display_data(state *state.State) {
 		builder.WriteString(strings.Repeat(indent_block, state.Indentation[state.Buffer_idx][i])) // indent
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString(ansi.Reset_text)
+
+		if i <= 3 {
+			builder.WriteString(LINE_NAMES[i])
+		}
+
 		builder.WriteByte('\n')
 	}
 
