@@ -177,38 +177,51 @@ func Process_insert_input(state *state.State) {
 		case slices.Equal(state.Input, []byte{9}): // [tab], suggestion down
 			state.Suggestion_idx++
 
-			var command_matches []string
-			command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
-		
-			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
+			command_matches := get_commands(state)
 
+			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 		case slices.Equal(state.Input, []byte{27, 91, 90}): // [shift][tab], suggestion up
 			state.Suggestion_idx--
 
-			var command_matches []string
-			command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
+			command_matches := get_commands(state)
 		
 			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 		case slices.Equal(state.Input, []byte{13}): // [enter]
 			if len(state.Text_buffer) > 0 { // if text buffer has characters
-				var command_matches []string
-				command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
+				command_matches := get_commands(state)
 		
-				state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
+				state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches) - 1)
 
 				if len(command_matches) >= 1 {
-					var idx int = min(state.Suggestion_idx, len(command_matches) - 1)
+					var idx int = min(state.Suggestion_idx, len(command_matches))
+
+					var commands []string
+
 					s := command_matches[idx]
-					alias, ok := tokens.Token_aliases[s]
-					if ok {
-						s = alias
+
+					if strings.HasSuffix(s, "　<expand>") {
+						for _, char := range strings.TrimSuffix(s, "　<expand>") {
+							in := slices.Contains(tokens.Commands, string(char))
+							if in {
+								commands = append(commands, string(char))
+							}
+						}
+					} else {
+						alias, ok := tokens.Token_aliases[s]
+						if ok {
+							commands = append(commands, alias)
+						}
 					}
-					state.Buffers[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Buffers[state.Buffer_idx][state.Cursor_row], state.Cursor_col, s)
+
+					slices.Reverse(commands)
+					for _, command := range commands {
+						state.Buffers[state.Buffer_idx][state.Cursor_row] = slices.Insert(state.Buffers[state.Buffer_idx][state.Cursor_row], state.Cursor_col, command)
+					}
 
 					state.Input = []byte{}
 					state.Suggestion_idx = 0
 					state.Text_buffer = []rune{}
-					state.Cursor_col++
+					state.Cursor_col += len(commands)
 				}
 			}
 		default:
@@ -477,3 +490,38 @@ func bound_cursor(state *state.State) {
 	state.Viewport_row = max(0, min(state.Viewport_row, max_viewport))
 }
 
+func is_valid_number_no_sci(s string) bool {
+	if strings.ContainsAny(s, "eE") {
+		return false
+	}
+
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
+}
+
+func get_commands(state *state.State) []string {
+	var command_matches []string
+	command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
+
+	capitalised := strings.ToUpper(string(state.Text_buffer))
+
+	alphabetic := true
+	for _, char := range capitalised {
+		if char < 'A' && char > 'Z' {
+			alphabetic = false
+			break
+		}
+	}
+
+	if alphabetic {
+		command_matches = append([]string{capitalised + "　<expand>"}, command_matches...)
+	}
+
+	numeric := is_valid_number_no_sci(string(state.Text_buffer))
+
+	if numeric {
+		command_matches = append([]string{string(state.Text_buffer) + "　<expand>"}, command_matches...)
+	}
+
+	return command_matches
+}

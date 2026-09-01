@@ -1,6 +1,6 @@
 package render
 
-import(
+import (
 	"fmt"
 	"log"
 	"os"
@@ -129,6 +129,26 @@ func Display_data(state *state.State) {
 		var command_matches []string
 		command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
 		
+		capitalised := strings.ToUpper(string(state.Text_buffer))
+
+		alphabetic := true
+		for _, char := range capitalised {
+			if char < 'A' && char > 'Z' {
+				alphabetic = false
+				break
+			}
+		}
+
+		if alphabetic {
+			command_matches = append([]string{capitalised + "　 string"}, command_matches...)
+		}
+
+		numeric := is_valid_number_no_sci(string(state.Text_buffer))
+
+		if numeric {
+			command_matches = append([]string{string(state.Text_buffer) + "　number"}, command_matches...)
+		}
+
 		if len(command_matches) > 0 {
 			var start int = min(state.Suggestion_idx, len(command_matches) - 1)
 			var end int = min(5 + state.Suggestion_idx, len(command_matches))
@@ -249,4 +269,13 @@ func Get_term_size() (int, int) {
 		log.Fatal("Failed to get terminal dimensions: ", err)
 	}
 	return width, height
+}
+
+func is_valid_number_no_sci(s string) bool {
+	if strings.ContainsAny(s, "eE") {
+		return false
+	}
+
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
 }
