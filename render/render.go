@@ -2,17 +2,15 @@ package render
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"ti_forge/ansi"
+	"ti_forge/helpers"
 	"ti_forge/state"
 	"ti_forge/tokens"
 	"unicode/utf8"
-
 	"github.com/lithammer/fuzzysearch/fuzzy"
-	"golang.org/x/term"
 )
 
 var LINE_NAMES = [4]string{"　name", "　comment", "　locked?", "　archived?"}
@@ -28,7 +26,7 @@ func Display_data(state *state.State) {
 	max_line_num_len := len(strconv.Itoa(len(program_data)))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
-	_, height := Get_term_size()
+	_, height := helpers.Get_term_size()
 	height -= 6
 
 	var builder strings.Builder
@@ -143,7 +141,7 @@ func Display_data(state *state.State) {
 			command_matches = append([]string{capitalised + "　 string"}, command_matches...)
 		}
 
-		numeric := is_valid_number_no_sci(string(state.Text_buffer))
+		numeric := helpers.Is_valid_number_no_sci(string(state.Text_buffer))
 
 		if numeric {
 			command_matches = append([]string{string(state.Text_buffer) + "　number"}, command_matches...)
@@ -230,7 +228,7 @@ func is_highlighted(row int, col int, state *state.State) bool {
 	return true
 }
 
-func Calculate_indentation(state *state.State) {
+/*func Calculate_indentation(state *state.State) {
 	fmt.Println(state.Buffers)
 
 	program_data := state.Buffers[state.Buffer_idx]
@@ -278,4 +276,4 @@ func is_valid_number_no_sci(s string) bool {
 
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
-}
+}*/

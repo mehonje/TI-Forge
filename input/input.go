@@ -11,7 +11,7 @@ import (
 	"strings"
 	"ti_forge/ansi"
 	"ti_forge/convert"
-	"ti_forge/render"
+	"ti_forge/helpers"
 	"ti_forge/state"
 	"ti_forge/tokens"
 	"unicode"
@@ -73,7 +73,7 @@ func Process_input(state *state.State) {
 	})
 
 	if changed {
-		render.Calculate_indentation(state)
+		helpers.Calculate_indentation(state)
 	}
 
 	switch {
@@ -475,7 +475,7 @@ func set_option(option string, value int, state *state.State) error {
 
 func bound_cursor(state *state.State) {
 	lines := len(state.Buffers[state.Buffer_idx])
-	_, height := render.Get_term_size()
+	_, height := helpers.Get_term_size()
 	height -= 6
 
 	state.Cursor_row = max(0, min(state.Cursor_row, lines))
