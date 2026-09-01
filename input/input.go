@@ -210,6 +210,8 @@ func Process_insert_input(state *state.State) {
 						alias, ok := tokens.Token_aliases[s]
 						if ok {
 							commands = append(commands, alias)
+						} else {
+							commands = append(commands, s)
 						}
 					}
 
@@ -507,7 +509,7 @@ func get_commands(state *state.State) []string {
 
 	alphabetic := true
 	for _, char := range capitalised {
-		if char < 'A' && char > 'Z' {
+		if char < 'A' || char > 'Z' {
 			alphabetic = false
 			break
 		}

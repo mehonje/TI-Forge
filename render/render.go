@@ -133,7 +133,7 @@ func Display_data(state *state.State) {
 
 		alphabetic := true
 		for _, char := range capitalised {
-			if char < 'A' && char > 'Z' {
+			if char < 'A' || char > 'Z' {
 				alphabetic = false
 				break
 			}
