@@ -39,6 +39,8 @@ func Process_input(state *state.State) {
 		}
 	}
 
+	old_text_buffer := slices.Clone(state.Text_buffer)
+
 	switch state.Mode {
 		case 0: Process_normal_input(state)
 		case 1: Process_insert_input(state)
@@ -66,13 +68,13 @@ func Process_input(state *state.State) {
 		}
 	}
 	
-	changed := !slices.EqualFunc(state.Buffers, old_buffers, func(slice1, slice2 [][]string) bool {
+	buffers_changed := !slices.EqualFunc(state.Buffers, old_buffers, func(slice1, slice2 [][]string) bool {
 		return slices.EqualFunc(slice1, slice2, func(row1, row2 []string) bool {
 			return slices.Equal(row1, row2)
 		})
 	})
 
-	if changed {
+	if buffers_changed {
 		helpers.Calculate_indentation(state)
 	}
 
@@ -83,8 +85,10 @@ func Process_input(state *state.State) {
 			state.Highlighting = false
 	}
 
-	get_command_matches(state)
-	state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(state.Command_matches))
+	if !slices.Equal(state.Text_buffer, old_text_buffer) {
+		get_command_matches(state)
+		state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(state.Command_matches))
+	}
 }
 
 func Process_normal_input(state *state.State) {
