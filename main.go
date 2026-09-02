@@ -36,6 +36,7 @@ func main() {
 			"indent_size": 2,
 			"block_highlight": 1,
 		},
+		Command_matches: []string{},
 	}
 	
 	fd := int(os.Stdin.Fd())

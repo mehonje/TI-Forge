@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"golang.org/x/term"
 	"log"
 	"os"
@@ -11,8 +10,6 @@ import (
 )
 
 func Calculate_indentation(state *state.State) {
-	fmt.Println(state.Buffers)
-
 	program_data := state.Buffers[state.Buffer_idx]
 	state.Indentation[state.Buffer_idx] = make([]int, len(program_data))
 

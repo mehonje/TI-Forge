@@ -82,6 +82,9 @@ func Process_input(state *state.State) {
 			state.Text_buffer = []rune{}
 			state.Highlighting = false
 	}
+
+	get_command_matches(state)
+	state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(state.Command_matches))
 }
 
 func Process_normal_input(state *state.State) {
@@ -176,31 +179,26 @@ func Process_insert_input(state *state.State) {
 			}
 		case slices.Equal(state.Input, []byte{9}): // [tab], suggestion down
 			state.Suggestion_idx++
-
-			command_matches := get_commands(state)
-
-			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 		case slices.Equal(state.Input, []byte{27, 91, 90}): // [shift][tab], suggestion up
 			state.Suggestion_idx--
-
-			command_matches := get_commands(state)
-		
-			state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches))
 		case slices.Equal(state.Input, []byte{13}): // [enter]
 			if len(state.Text_buffer) > 0 { // if text buffer has characters
-				command_matches := get_commands(state)
-		
-				state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(command_matches) - 1)
-
-				if len(command_matches) >= 1 {
-					var idx int = min(state.Suggestion_idx, len(command_matches))
+				if len(state.Command_matches) >= 1 {
+					var idx int = min(state.Suggestion_idx, len(state.Command_matches))
 
 					var commands []string
 
-					s := command_matches[idx]
+					s := state.Command_matches[idx]
 
-					if strings.HasSuffix(s, "　<expand>") {
-						for _, char := range strings.TrimSuffix(s, "　<expand>") {
+					if strings.HasSuffix(s, "　string") {
+						for _, char := range strings.TrimSuffix(s, "　string") {
+							in := slices.Contains(tokens.Commands, string(char))
+							if in {
+								commands = append(commands, string(char))
+							}
+						}
+					} else if strings.HasSuffix(s, "　number") {
+						for _, char := range strings.TrimSuffix(s, "　number") {
 							in := slices.Contains(tokens.Commands, string(char))
 							if in {
 								commands = append(commands, string(char))
@@ -501,9 +499,8 @@ func is_valid_number_no_sci(s string) bool {
 	return err == nil
 }
 
-func get_commands(state *state.State) []string {
-	var command_matches []string
-	command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
+func get_command_matches(state *state.State) {
+	state.Command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
 
 	capitalised := strings.ToUpper(string(state.Text_buffer))
 
@@ -516,14 +513,12 @@ func get_commands(state *state.State) []string {
 	}
 
 	if alphabetic {
-		command_matches = append([]string{capitalised + "　<expand>"}, command_matches...)
+		state.Command_matches = append([]string{capitalised + "　string"}, state.Command_matches...)
 	}
 
 	numeric := is_valid_number_no_sci(string(state.Text_buffer))
 
 	if numeric {
-		command_matches = append([]string{string(state.Text_buffer) + "　<expand>"}, command_matches...)
+		state.Command_matches = append([]string{string(state.Text_buffer) + "　number"}, state.Command_matches...)
 	}
-
-	return command_matches
 }

@@ -18,5 +18,6 @@ type State struct {
 	Copy_buffer [][]string
 	Options map[string]int
 	Viewport_row int
+	Command_matches []string
 }
 

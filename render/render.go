@@ -8,9 +8,7 @@ import (
 	"ti_forge/ansi"
 	"ti_forge/helpers"
 	"ti_forge/state"
-	"ti_forge/tokens"
 	"unicode/utf8"
-	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 var LINE_NAMES = [4]string{"　name", "　comment", "　locked?", "　archived?"}
@@ -124,33 +122,10 @@ func Display_data(state *state.State) {
 
 	var display_command_matches []string
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
-		var command_matches []string
-		command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
-		
-		capitalised := strings.ToUpper(string(state.Text_buffer))
-
-		alphabetic := true
-		for _, char := range capitalised {
-			if char < 'A' || char > 'Z' {
-				alphabetic = false
-				break
-			}
-		}
-
-		if alphabetic {
-			command_matches = append([]string{capitalised + "　 string"}, command_matches...)
-		}
-
-		numeric := helpers.Is_valid_number_no_sci(string(state.Text_buffer))
-
-		if numeric {
-			command_matches = append([]string{string(state.Text_buffer) + "　number"}, command_matches...)
-		}
-
-		if len(command_matches) > 0 {
-			var start int = min(state.Suggestion_idx, len(command_matches) - 1)
-			var end int = min(5 + state.Suggestion_idx, len(command_matches))
-			display_command_matches = command_matches[start:end]
+		if len(state.Command_matches) > 0 {
+			var start int = min(state.Suggestion_idx, len(state.Command_matches) - 1)
+			var end int = min(5 + state.Suggestion_idx, len(state.Command_matches))
+			display_command_matches = state.Command_matches[start:end]
 		}
 	}
 
