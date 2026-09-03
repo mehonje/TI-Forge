@@ -8,7 +8,6 @@ import (
 	"ti_forge/ansi"
 	"ti_forge/helpers"
 	"ti_forge/state"
-	"unicode/utf8"
 )
 
 var LINE_NAMES = [4]string{"　name", "　comment", "　locked?", "　archived?"}
@@ -43,15 +42,23 @@ func Display_data(state *state.State) {
 		Size: 0,
 	}
 
+	build_viewport(&builder, &program_data, state, &highlight, &line_num_fmtstr, &indent_block, height)
+
+	build_bottom_bars(&builder, state)
+
+	os.Stdout.WriteString(builder.String())
+}
+
+func build_viewport(builder *strings.Builder, program_data *[][]string, state *state.State, highlight *highlight, line_num_fmtstr *string, indent_block *string, height int) {
 	for i := state.Viewport_row; i < state.Viewport_row + height; i++ {
-		if i >= len(program_data) {
+		if i >= len(*program_data) {
 			break
 		}
 
 		var line_builder strings.Builder
 
-		for j, command := range program_data[i] {
-			highlight = process_block_highlight(command, highlight, i, j, state.Cursor_row, state.Cursor_col)
+		for j, command := range (*program_data)[i] {
+			*highlight = process_block_highlight(command, *highlight, i, j, state.Cursor_row, state.Cursor_col)
 
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
@@ -69,8 +76,8 @@ func Display_data(state *state.State) {
 		}
 
 		line_builder.WriteString(ansi.Reset_text)
-		fmt.Fprintf(&builder, line_num_fmtstr, i + 1) // padded line number, starts at 1
-		builder.WriteString(strings.Repeat(indent_block, state.Indentation[state.Buffer_idx][i])) // indent
+		fmt.Fprintf(builder, *line_num_fmtstr, i + 1) // padded line number, starts at 1
+		builder.WriteString(strings.Repeat(*indent_block, state.Indentation[state.Buffer_idx][i])) // indent
 		builder.WriteString(line_builder.String()) // line
 		line_builder.WriteString(ansi.Reset_text)
 
@@ -80,12 +87,9 @@ func Display_data(state *state.State) {
 
 		builder.WriteByte('\n')
 	}
+}
 
-	var screen_col int = max_line_num_len+2
-	for i := 0; i < state.Cursor_col; i++ {
-    screen_col += utf8.RuneCountInString(program_data[state.Cursor_row][i])
-	}
-
+func build_bottom_bars(builder *strings.Builder, state *state.State) {
 	builder.WriteString(ansi.Reset_text)
 	
 	builder.WriteString(state.File_names[state.Buffer_idx])
@@ -144,8 +148,6 @@ func Display_data(state *state.State) {
 			builder.WriteByte('\n')
 		}
 	}
-
-	os.Stdout.WriteString(builder.String())
 }
 
 func process_block_highlight(command string, highlight highlight, row int, col int, cursor_row int, cursor_col int) highlight {
