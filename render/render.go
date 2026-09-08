@@ -24,7 +24,7 @@ func Display_data(state *state.State) {
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
 	
 	_, height := helpers.Get_term_size()
-	height -= 6
+	height -= 7
 
 	var builder strings.Builder
 

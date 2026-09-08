@@ -40,6 +40,7 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 	var lines [][]string = [][]string{}
 	
 	lines = append(lines, []string{})
+	
 	for _, char := range program_metadata[0] {
 		if char == rune(0x00) {
 			break
@@ -66,7 +67,6 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 	} else { // unarchived
 		lines = append(lines, []string{"false"})
 	}
-	
 
 	var i int
 	var program_data_len int = len(program_data)
