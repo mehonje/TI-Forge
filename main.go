@@ -17,28 +17,28 @@ func main() {
 	enable_utf8()
 
 	state := state.State{
-		Quit: false,
-		Cursor_row: 0,
-		Cursor_col: 0,
-		Mode: 0,
-		Text_buffer: []rune{},
+		Quit:           false,
+		Cursor_row:     0,
+		Cursor_col:     0,
+		Mode:           0,
+		Text_buffer:    []rune{},
 		Suggestion_idx: 0,
-		Input: []byte{},
-		Buffers: [][][]string{{{"　"}}},
-		Indentation: [][]int{{0}},
-		File_names: []string{""},
-		Buffer_idx: 0,
-		Highlight_row: 0,
-		Highlight_col: 0,
-		Highlighting: false,
-		Copy_buffer: [][]string{},
+		Input:          []byte{},
+		Buffers:        [][][]string{{{"　"}}},
+		Indentation:    [][]int{{0}},
+		File_names:     []string{""},
+		Buffer_idx:     0,
+		Highlight_row:  0,
+		Highlight_col:  0,
+		Highlighting:   false,
+		Copy_buffer:    [][]string{},
 		Options: map[string]int{
-			"indent_size": 2,
+			"indent_size":     2,
 			"block_highlight": 1,
 		},
 		Command_matches: []string{},
 	}
-	
+
 	fd := int(os.Stdin.Fd())
 	cooked_state, err := term.MakeRaw(fd)
 	if err != nil {
@@ -51,7 +51,7 @@ func main() {
 		render.Display_data(&state)
 		input.Get_input(&state)
 		input.Process_input(&state)
-		
+
 		if state.Quit {
 			fmt.Print(ansi.Clear)
 			fmt.Print(ansi.Reset_cursor)
@@ -67,4 +67,3 @@ func enable_utf8() {
 	cmd.Stdout = os.Stdout
 	cmd.Run()
 }
-

@@ -12,11 +12,10 @@ import (
 )
 
 func Read8xp(path string) ([]byte, [4]string, error) {
-	path = strings.TrimSpace(path)   // Remove whitespace
+	path = strings.TrimSpace(path)        // Remove whitespace
 	if !strings.HasSuffix(path, ".8xp") { // If file path doesn't have ".8xp" suffix,
 		path = path + ".8xp" // Append it
 	}
-
 
 	var program_metadata [4]string
 	var program_data []byte
@@ -38,9 +37,9 @@ func Read8xp(path string) ([]byte, [4]string, error) {
 
 func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string {
 	var lines [][]string = [][]string{}
-	
+
 	lines = append(lines, []string{})
-	
+
 	for _, char := range program_metadata[0] {
 		if char == rune(0x00) {
 			break
@@ -79,7 +78,7 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 		step := 1
 		if i < program_data_len-1 {
 			next_byte = program_data[i+1]
-			
+
 			switch curr_byte {
 			case 0xbb:
 				s, ok := tokens.Tokens_bb[next_byte] // Check if mapping exists
@@ -87,7 +86,7 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 					line = append(line, s) // Replace if yes,
 					step = 2
 				} else {
-					line= append(line, string(curr_byte)) // Turn into string if no
+					line = append(line, string(curr_byte)) // Turn into string if no
 				}
 			case 0xef:
 				s, ok := tokens.Tokens_ef[next_byte] // Check if mapping exists
@@ -122,7 +121,7 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 					line = append(line, string(curr_byte)) // Turn into string if no
 				}
 			case 0xaa:
-					s, ok := tokens.Tokens_aa[next_byte] // Check if mapping exists
+				s, ok := tokens.Tokens_aa[next_byte] // Check if mapping exists
 				if ok {
 					line = append(line, s) // Replace if yes
 					step = 2
@@ -165,7 +164,7 @@ func Data_to_strings(program_data []byte, program_metadata [4]string) [][]string
 	for i := 0; i < len(lines); i++ {
 		lines[i] = append(lines[i], "　")
 	}
-	
+
 	return lines
 }
 
@@ -175,19 +174,19 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 	}
 
 	var metadata [4][]byte = [4][]byte{}
-	for _, command := range program_lines[0][:len(program_lines[0]) - 1] {
+	for _, command := range program_lines[0][:len(program_lines[0])-1] {
 		arr, ok := tokens.Reverse_tokens[command]
 		if ok {
 			for _, token_byte := range arr {
-				metadata[0] = append(metadata[0], token_byte)	
+				metadata[0] = append(metadata[0], token_byte)
 			}
 		}
 	}
-	for _, command := range program_lines[1][:len(program_lines[1]) - 1] {
+	for _, command := range program_lines[1][:len(program_lines[1])-1] {
 		arr, ok := tokens.Reverse_tokens[command]
 		if ok {
 			for _, token_byte := range arr {
-				metadata[1] = append(metadata[1], token_byte)	
+				metadata[1] = append(metadata[1], token_byte)
 			}
 		}
 	}
@@ -224,34 +223,34 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 		copy(comment_padded, []byte(metadata[1]))
 		program_byte_data = append(program_byte_data, comment_padded...)
 	}
-	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder meta_and_body_length. Set later on
-	program_byte_data = append(program_byte_data, 0x0d)       // Append flag
-	program_byte_data = append(program_byte_data, 0x00)       // Append unknown
-	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder body_and_checksum_length. Set later
+	program_byte_data = append(program_byte_data, 0x00, 0x00)     // Append placeholder meta_and_body_length. Set later on
+	program_byte_data = append(program_byte_data, 0x0d)           // Append flag
+	program_byte_data = append(program_byte_data, 0x00)           // Append unknown
+	program_byte_data = append(program_byte_data, 0x00, 0x00)     // Append placeholder body_and_checksum_length. Set later
 	program_byte_data = append(program_byte_data, metadata[2][0]) // Append file type
-	{ // Append program_name
+	{                                                             // Append program_name
 		name_padded := make([]byte, 8)
 		copy(name_padded, []byte(metadata[0]))
 		program_byte_data = append(program_byte_data, name_padded...)
 	}
-	program_byte_data = append(program_byte_data, 0x00) // Append version
+	program_byte_data = append(program_byte_data, 0x00)           // Append version
 	program_byte_data = append(program_byte_data, metadata[3][0]) // Append is_archived
-	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder body_and_checksum_length_2. Set later
-	program_byte_data = append(program_byte_data, 0x00, 0x00) // Append placeholder body_length. Set later
+	program_byte_data = append(program_byte_data, 0x00, 0x00)     // Append placeholder body_and_checksum_length_2. Set later
+	program_byte_data = append(program_byte_data, 0x00, 0x00)     // Append placeholder body_length. Set later
 
 	var program_lines_no_meta [][]string = program_lines[4:]
 	var program_commands []string = []string{}
 	for row, line := range program_lines_no_meta {
 		for _, command := range line {
 			switch command {
-				case "　":
-					program_commands = append(program_commands, "\n")
-				case "true":
-					return errors.New("Program cannot contain \"true\" command. Line " + strconv.Itoa(5 + row)) // add 5 to make up for 4 metadata lines and 0-indexing
-				case "false":
-					return errors.New("Program cannot contain \"false\" command. Line " + strconv.Itoa(5 + row))
-				default:
-					program_commands = append(program_commands, command)
+			case "　":
+				program_commands = append(program_commands, "\n")
+			case "true":
+				return errors.New("Program cannot contain \"true\" command. Line " + strconv.Itoa(5+row)) // add 5 to make up for 4 metadata lines and 0-indexing
+			case "false":
+				return errors.New("Program cannot contain \"false\" command. Line " + strconv.Itoa(5+row))
+			default:
+				program_commands = append(program_commands, command)
 			}
 		}
 	}
@@ -310,4 +309,3 @@ func Txt_to_eightxp(to_path string, program_lines [][]string) error {
 
 	return nil
 }
-

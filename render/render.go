@@ -14,7 +14,7 @@ var LINE_NAMES = [4]string{"　name", "　comment", "　locked?", "　archived?"
 
 type highlight struct {
 	Active bool
-	Size int
+	Size   int
 }
 
 func Display_data(state *state.State) {
@@ -22,7 +22,7 @@ func Display_data(state *state.State) {
 
 	max_line_num_len := len(strconv.Itoa(len(program_data)))
 	line_num_fmtstr := fmt.Sprintf("%%%dd ", max_line_num_len)
-	
+
 	_, height := helpers.Get_term_size()
 	height -= 7
 
@@ -39,7 +39,7 @@ func Display_data(state *state.State) {
 
 	highlight := highlight{
 		Active: false,
-		Size: 0,
+		Size:   0,
 	}
 
 	build_viewport(&builder, &program_data, state, &highlight, &line_num_fmtstr, &indent_block, height)
@@ -50,7 +50,7 @@ func Display_data(state *state.State) {
 }
 
 func build_viewport(builder *strings.Builder, program_data *[][]string, state *state.State, highlight *highlight, line_num_fmtstr *string, indent_block *string, height int) {
-	for i := state.Viewport_row; i < state.Viewport_row + height; i++ {
+	for i := state.Viewport_row; i < state.Viewport_row+height; i++ {
 		if i >= len(*program_data) {
 			break
 		}
@@ -76,9 +76,9 @@ func build_viewport(builder *strings.Builder, program_data *[][]string, state *s
 		}
 
 		line_builder.WriteString(ansi.Reset_text)
-		fmt.Fprintf(builder, *line_num_fmtstr, i + 1) // padded line number, starts at 1
+		fmt.Fprintf(builder, *line_num_fmtstr, i+1)                                                // padded line number, starts at 1
 		builder.WriteString(strings.Repeat(*indent_block, state.Indentation[state.Buffer_idx][i])) // indent
-		builder.WriteString(line_builder.String()) // line
+		builder.WriteString(line_builder.String())                                                 // line
 		line_builder.WriteString(ansi.Reset_text)
 
 		if i <= 3 {
@@ -91,29 +91,29 @@ func build_viewport(builder *strings.Builder, program_data *[][]string, state *s
 
 func build_bottom_bars(builder *strings.Builder, state *state.State) {
 	builder.WriteString(ansi.Reset_text)
-	
+
 	builder.WriteString(state.File_names[state.Buffer_idx])
 	builder.WriteByte('\n')
 
 	var mode_string string = ""
 	var prepend_string string = ""
 	switch state.Mode {
-		case 0:
-			mode_string = "NORMAL"
-		case 1:
-			mode_string = "INSERT"
-		case 2:
-			mode_string = "COMMAND"
-			prepend_string = ":"
-		case 3:
-			mode_string = "VISUAL"
+	case 0:
+		mode_string = "NORMAL"
+	case 1:
+		mode_string = "INSERT"
+	case 2:
+		mode_string = "COMMAND"
+		prepend_string = ":"
+	case 3:
+		mode_string = "VISUAL"
 	}
 	builder.WriteString(mode_string)
 	builder.WriteString("   ")
 	builder.WriteString(prepend_string)
-	
+
 	if len(state.Text_buffer) > 0 {
-			builder.WriteString(string(state.Text_buffer))
+		builder.WriteString(string(state.Text_buffer))
 	}
 
 	if state.Mode == 1 || state.Mode == 2 {
@@ -127,8 +127,8 @@ func build_bottom_bars(builder *strings.Builder, state *state.State) {
 	var display_command_matches []string
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
 		if len(state.Command_matches) > 0 {
-			var start int = min(state.Suggestion_idx, len(state.Command_matches) - 1)
-			var end int = min(5 + state.Suggestion_idx, len(state.Command_matches))
+			var start int = min(state.Suggestion_idx, len(state.Command_matches)-1)
+			var end int = min(5+state.Suggestion_idx, len(state.Command_matches))
 			display_command_matches = state.Command_matches[start:end]
 		}
 	}
@@ -185,7 +185,7 @@ func is_highlighted(row int, col int, state *state.State) bool {
 	if row == state.Cursor_row && col == state.Cursor_col {
 		return true
 	}
-	
+
 	start_row, start_col := state.Cursor_row, state.Cursor_col
 	end_row, end_col := state.Highlight_row, state.Highlight_col
 
