@@ -62,6 +62,8 @@ func Process_input(state *state.State) {
 			state.Cursor_row = len(state.Buffers[state.Buffer_idx]) - 1
 		}
 
+		bound_cursor(state)
+
 		var line_length int = len(state.Buffers[state.Buffer_idx][state.Cursor_row])
 		if line_length == 0 {
 			state.Cursor_col = 0
@@ -175,8 +177,6 @@ func Process_normal_input(state *state.State) {
 	default:
 		state.Text_buffer = old_text_buffer
 	}
-
-	bound_cursor(state)
 }
 
 func Process_insert_input(state *state.State) {
@@ -481,7 +481,7 @@ func set_option(option string, value int, state *state.State) error {
 func bound_cursor(state *state.State) {
 	lines := len(state.Buffers[state.Buffer_idx])
 	_, height := helpers.Get_term_size()
-	height -= 6
+	height -= 7
 
 	state.Cursor_row = max(0, min(state.Cursor_row, lines))
 
