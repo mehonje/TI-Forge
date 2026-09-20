@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"ti_forge/ansi"
 	"ti_forge/input"
 	"ti_forge/render"
@@ -14,8 +13,6 @@ import (
 )
 
 func main() {
-	enable_utf8()
-
 	state := state.State{
 		Quit:           false,
 		Cursor_row:     0,
@@ -60,10 +57,4 @@ func main() {
 			return
 		}
 	}
-}
-
-func enable_utf8() {
-	cmd := exec.Command("cmd.exe", "/c", "chcp 65001 > nul")
-	cmd.Stdout = os.Stdout
-	cmd.Run()
 }
