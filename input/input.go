@@ -3,7 +3,6 @@ package input
 import (
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"os"
 	"reflect"
 	"slices"
@@ -307,14 +306,6 @@ func Process_command_input(state *state.State) {
 				state.Text_buffer = []rune("Reached first buffer")
 			}
 		case "help": // help
-			num := rand.IntN(100)
-			if num == 0 {
-				err := browser.OpenURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-				if err != nil {
-					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to open browser: " + err.Error() + ansi.Reset_text)
-				}
-			}
-
 			err := browser.OpenURL("https://github.com/mehonje/TI-Forge")
 			if err != nil {
 				state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to open browser: " + err.Error() + ansi.Reset_text)
