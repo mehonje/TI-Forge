@@ -93,8 +93,8 @@ func Process_input(state *state.State) {
 
 	if !slices.Equal(state.Text_buffer, old_text_buffer) {
 		get_command_matches(state)
-		state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(state.Command_matches))
 	}
+	state.Suggestion_idx = bound_suggestion_idx(state.Suggestion_idx, len(state.Command_matches))
 }
 
 func Process_normal_input(state *state.State) {
