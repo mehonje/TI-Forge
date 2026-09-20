@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"ti_forge/ansi"
@@ -498,7 +499,14 @@ func is_valid_number_no_sci(s string) bool {
 }
 
 func get_command_matches(state *state.State) {
-	state.Command_matches = fuzzy.FindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
+	matches := fuzzy.RankFindFold(string(state.Text_buffer), tokens.Commands) // find commands that match the text buffer,
+	sort.Sort(matches)
+
+	state.Command_matches = make([]string, len(matches))
+
+	for idx, match := range matches {
+		state.Command_matches[idx] = match.Target
+	}
 
 	capitalised := strings.ToUpper(string(state.Text_buffer))
 
