@@ -159,7 +159,6 @@ var Tokens = map[byte]string{ // Normal tokens
 	0x37: "7",           //
 	0x38: "8",           //
 	0x39: "9",           //
-	0x0a: "getTime",     //
 }
 
 var Tokens_bb = map[byte]string{ // 2-byte tokens
@@ -233,6 +232,11 @@ var Tokens_ef = map[byte]string{
 	0x6a: "DetectAsymOn",   //
 	0x75: "Dot-Thin",       //
 	0x09: "getDate",        //
+	0x0c: "getDtFmt",       //
+	0x07: "getDtStr(",      //
+	0x0d: "getTmFmt",       //
+	0x08: "getTmStr(",      //
+	0x0a: "getTime",        //
 }
 
 var Tokens_63 = map[byte]string{
