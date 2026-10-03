@@ -1,7 +1,7 @@
 # TI-Forge
 TI-Forge is an IDE for the TI-BASIC programming language. It is a custom-built Vim clone designed for programming in TI-BASIC.
 
-[Latest Build (.exe)](ti_forge.exe)  
+[Latest Build (.exe)](mehonje.itch.io/ti_forge) 
 [GNU GPL v3 License](LICENSE)
 
 ### Overview
