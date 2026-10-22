@@ -85,7 +85,7 @@ func build_viewport(builder *strings.Builder, program_data *[][]string, state *s
 			builder.WriteString(LINE_NAMES[i])
 		}
 
-		builder.WriteByte('\n')
+		builder.WriteString("\r\n")
 	}
 }
 
@@ -93,7 +93,7 @@ func build_bottom_bars(builder *strings.Builder, state *state.State) {
 	builder.WriteString(ansi.Reset_text)
 
 	builder.WriteString(state.File_names[state.Buffer_idx])
-	builder.WriteByte('\n')
+	builder.WriteString("\r\n")
 
 	var mode_string string = ""
 	var prepend_string string = ""
@@ -122,7 +122,7 @@ func build_bottom_bars(builder *strings.Builder, state *state.State) {
 		builder.WriteString(ansi.Reset_text)
 	}
 
-	builder.WriteByte('\n')
+	builder.WriteString("\r\n")
 
 	var display_command_matches []string
 	if state.Mode == 1 && len(state.Text_buffer) > 0 { // if in insert mode and text buffer has characters,
@@ -145,7 +145,7 @@ func build_bottom_bars(builder *strings.Builder, state *state.State) {
 		}
 
 		if idx <= 3 {
-			builder.WriteByte('\n')
+			builder.WriteString("\r\n")
 		}
 	}
 }
