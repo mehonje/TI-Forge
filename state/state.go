@@ -1,5 +1,7 @@
 package state
 
+import "ti_forge/state/settings"
+
 type State struct {
 	Quit            bool
 	Cursor_row      int
@@ -16,7 +18,7 @@ type State struct {
 	Highlight_col   int
 	Highlighting    bool
 	Copy_buffer     [][]string
-	Options         map[string]int
+	Settings        settings.Settings
 	Viewport_row    int
 	Command_matches []string
 }

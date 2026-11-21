@@ -1,8 +1,6 @@
 package input
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"reflect"
 	"slices"
@@ -314,14 +312,29 @@ func Process_command_input(state *state.State) {
 				state.Text_buffer = []rune("Check your web browser")
 			}
 		case "set": // change option, second element is option name, third is value
-			val, err := strconv.Atoi(split_command[2])
-			if err != nil {
-				state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to set option: " + err.Error() + ansi.Reset_text)
-			} else {
-				err = set_option(split_command[1], val, state)
+			switch split_command[1] {
+			case "indent_size":
+				val, err := strconv.Atoi(split_command[2])
 				if err != nil {
-					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Failed to set option: " + err.Error() + ansi.Reset_text)
+					state.Text_buffer = []rune(ansi.Bold + ansi.Red + " Failed to set indent_size: " + err.Error() + ansi.Reset_text)
 				}
+
+				if val < 0 {
+					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "indent_size cannot be negative, got " + string(val) + ansi.Reset_text)
+				}
+
+				state.Settings.Indent_size = val
+				state.Text_buffer = []rune("Set indent_size")
+			case "block_highlight":
+				if split_command[2] == "true" {
+					state.Settings.Block_highlight = true
+				} else if split_command[2] == "false" {
+					state.Settings.Block_highlight = false
+				} else {
+					state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Unknown value \"" + split_command[1] + "\" for block_highlight" + ansi.Reset_text)
+				}
+			default:
+				state.Text_buffer = []rune(ansi.Bold + ansi.Red + "Unknown option \"" + split_command[1] + "\"" + ansi.Reset_text)
 			}
 		case "lbl": // go to label, second argument is label name
 			if len(split_command[1]) > 2 {
@@ -449,25 +462,6 @@ func Copy_selection(start_row int, start_col int, end_row int, end_col int, prog
 	}
 
 	return buffer
-}
-
-func set_option(option string, value int, state *state.State) error {
-	_, ok := state.Options[option]
-	if !ok {
-		return fmt.Errorf("Unknown option: \"%s\"", option)
-	}
-
-	if option == "indent_size" && value < 0 {
-		return errors.New("Value cannot be negative for option \"indent_size\"")
-	}
-
-	if option == "block_highlight" && (value != 0 && value != 1) {
-		return errors.New("Value must be boolean (1 or 0) for option \"block_highlight\"")
-	}
-
-	state.Options[option] = value
-
-	return nil
 }
 
 func bound_cursor(state *state.State) {

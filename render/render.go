@@ -33,7 +33,7 @@ func Display_data(state *state.State) {
 
 	indent_block := ""
 
-	for i := 0; i < state.Options["indent_size"]; i++ {
+	for i := 0; i < state.Settings.Indent_size; i++ {
 		indent_block = indent_block + " "
 	}
 
@@ -62,7 +62,7 @@ func build_viewport(builder *strings.Builder, program_data *[][]string, state *s
 
 			if is_highlighted(i, j, state) {
 				line_builder.WriteString(ansi.Highlight)
-			} else if state.Options["block_highlight"] == 1 && highlight.Active && highlight.Size == 0 {
+			} else if state.Settings.Block_highlight && highlight.Active && highlight.Size == 0 {
 				line_builder.WriteString(ansi.Highlight)
 				if highlight.Size == 0 && highlight.Active {
 					highlight.Active = false
